@@ -1,0 +1,1447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Working With Agents</title>
+<style>
+/* ===== Palette ===== */
+:root{
+  /* Light is the bare :root so the un-stamped "system" state resolves
+     correctly; the dark blocks redefine tokens only. */
+  --red:#4338CA; --red-fill:#4338CA; --red-fill-hover:#3730A3;
+  --black:#101014; --ink:#26262E; --subdued:#55555F;
+  --paper:#ffffff; --sand:#F4F4F7; --teal:#64748B;
+  --teal-wash:rgba(100,116,139,0.16);
+  --rule:#A1A1AA; --rule-soft:#E4E4E9;
+  --ok:#2B8028; --ok-wash:#EDF8ED;
+  --no:#D91208; --no-wash:#FBEDEA;
+  --warn:#FF9F46; --warn-wash:#FFFAF1;
+  --disp:Georgia,"Times New Roman",serif;
+  --body:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --pill:24px;
+  --maxw:1180px;
+  /* chrome + inverted surfaces (table heads, active pills) */
+  --hero-bg:#14141A; --hero-fg:#ffffff;
+  --invert-bg:#14141A; --invert-fg:#ffffff;
+  --navbar:rgba(255,255,255,.96);
+  --hover-soft:rgba(16,16,20,.07);
+  /* source-vintage badges */
+  --y26-bg:rgba(100,116,139,.18); --y26-fg:#334155;
+  --y25-bg:#FFF3E2;               --y25-fg:#8A5416;
+  --yold-bg:#FBEDEA;              --yold-fg:#8E1109;
+  --ydoc-bg:#ECECE6;              --ydoc-fg:#55555F;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --red:#A5B4FC; --red-fill:#4F46E5; --red-fill-hover:#4338CA;
+    --black:#F4F4F6; --ink:#D8D8DE; --subdued:#96969F;
+    --paper:#101014; --sand:#08080B; --teal:#94A3B8;
+    --teal-wash:rgba(148,163,184,.16);
+    --rule:#48484F; --rule-soft:#2A2A30;
+    --ok:#5FC25A; --ok-wash:rgba(95,194,90,.12);
+    --no:#F26A5C; --no-wash:rgba(242,106,92,.12);
+    --warn:#FFB169; --warn-wash:rgba(255,177,105,.10);
+    --invert-bg:#F4F4F6; --invert-fg:#101014;
+    --navbar:rgba(16,16,20,.96);
+    --hover-soft:rgba(244,244,246,.10);
+    --y26-bg:rgba(148,163,184,.18); --y26-fg:#C3CEDC;
+    --y25-bg:rgba(255,177,105,.16); --y25-fg:#F0B87E;
+    --yold-bg:rgba(242,106,92,.16); --yold-fg:#F09A8E;
+    --ydoc-bg:rgba(244,244,246,.10); --ydoc-fg:#96969F;
+  }
+}
+:root[data-theme="dark"]{
+  --red:#A5B4FC; --red-fill:#4F46E5; --red-fill-hover:#4338CA;
+  --black:#F4F4F6; --ink:#D8D8DE; --subdued:#96969F;
+  --paper:#101014; --sand:#08080B; --teal:#94A3B8;
+  --teal-wash:rgba(148,163,184,.16);
+  --rule:#48484F; --rule-soft:#2A2A30;
+  --ok:#5FC25A; --ok-wash:rgba(95,194,90,.12);
+  --no:#F26A5C; --no-wash:rgba(242,106,92,.12);
+  --warn:#FFB169; --warn-wash:rgba(255,177,105,.10);
+  --invert-bg:#F4F4F6; --invert-fg:#101014;
+  --navbar:rgba(16,16,20,.96);
+  --hover-soft:rgba(244,244,246,.10);
+  --y26-bg:rgba(148,163,184,.18); --y26-fg:#C3CEDC;
+  --y25-bg:rgba(255,177,105,.16); --y25-fg:#F0B87E;
+  --yold-bg:rgba(242,106,92,.16); --yold-fg:#F09A8E;
+  --ydoc-bg:rgba(244,244,246,.10); --ydoc-fg:#96969F;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth; scroll-padding-top:140px}
+body{
+  margin:0; background:var(--paper); color:var(--black);
+  font-family:var(--body); font-size:16px; line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+a{color:var(--black); text-decoration:none; border-bottom:1px solid var(--rule)}
+a:hover{color:var(--ink); border-bottom-color:var(--red)}
+.wrap{max-width:var(--maxw); margin:0 auto; padding:0 28px}
+
+/* ===== Masthead ===== */
+header.top{background:var(--hero-bg); color:var(--hero-fg); padding:0}
+.top .wrap{display:flex; align-items:center; justify-content:space-between; gap:24px; padding-top:20px; padding-bottom:20px}
+.logo{display:block; height:26px; width:auto}
+.logo svg{height:26px; width:auto; display:block}
+.eyebrow{font-size:.6875rem; letter-spacing:.14em; text-transform:uppercase; font-weight:500; color:var(--hero-fg); opacity:.72}
+
+/* ===== Hero ===== */
+.hero{background:var(--hero-bg); color:var(--hero-fg); padding:52px 0 64px; position:relative; overflow:hidden}
+.hero:after{content:""; position:absolute; right:-140px; top:-120px; width:460px; height:460px;
+  border-radius:50%; background:radial-gradient(circle at 34% 34%, rgba(99,102,241,.42), rgba(99,102,241,0) 66%); pointer-events:none}
+.hero h1{font-family:var(--disp); font-weight:800; font-size:clamp(2.4rem,6vw,4.6rem); line-height:1; margin:0 0 22px; letter-spacing:-.01em; position:relative}
+.hero h1 em{font-style:normal; color:var(--red)}
+.hero .lede{max-width:62ch; font-size:1.0625rem; line-height:1.6; color:rgba(255,255,255,.86); margin:0 0 26px}
+.hero .lede strong{color:#fff; font-weight:600}
+.metaline{display:flex; flex-wrap:wrap; gap:10px 28px; font-size:.75rem; letter-spacing:.1em; text-transform:uppercase; color:rgba(255,255,255,.6); font-weight:500;
+  border-top:1px solid rgba(255,255,255,.2); padding-top:18px; margin-top:34px}
+.metaline b{color:#fff; font-weight:600}
+
+/* ===== Sticky nav ===== */
+nav.sticky{position:sticky; top:0; z-index:50; background:var(--navbar); backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--rule-soft)}
+nav.sticky .wrap{display:flex; align-items:center; gap:6px; overflow-x:auto; padding-top:11px; padding-bottom:11px; scrollbar-width:none}
+nav.sticky .wrap::-webkit-scrollbar{display:none}
+nav.sticky a{border:0; font-size:.8125rem; font-weight:500; color:var(--subdued); white-space:nowrap;
+  padding:7px 13px; border-radius:var(--pill)}
+nav.sticky a:hover{background:var(--sand); color:var(--black)}
+nav.sticky a.here{background:var(--invert-bg); color:var(--invert-fg)}
+
+/* ===== Section furniture ===== */
+section{padding:64px 0}
+section.band{background:var(--sand)}
+.shead{margin:0 0 8px; display:flex; align-items:baseline; gap:14px; flex-wrap:wrap}
+.snum{font-family:var(--disp); font-weight:700; font-size:1rem; color:var(--red)}
+h2{font-family:var(--disp); font-weight:800; font-size:clamp(1.7rem,3.4vw,2.5rem); line-height:1.05; margin:0; letter-spacing:-.005em}
+.sdek{max-width:74ch; color:var(--subdued); font-size:1rem; margin:14px 0 34px}
+h3{font-family:var(--disp); font-weight:600; font-size:1.25rem; margin:44px 0 16px}
+
+/* ===== Rules (the ten) ===== */
+.rules{display:grid; gap:1px; background:var(--rule-soft); border:1px solid var(--rule-soft)}
+.rule{background:var(--paper); padding:22px 26px; display:grid; grid-template-columns:56px 1fr; gap:20px; align-items:start}
+.rule:hover{background:var(--warn-wash)}
+.rule .rn{font-family:var(--disp); font-weight:700; font-size:1.75rem; line-height:1; color:var(--red); padding-top:2px}
+.rule h4{margin:0 0 7px; font-family:var(--disp); font-weight:600; font-size:1.1875rem; line-height:1.25}
+.rule p{margin:0; color:var(--subdued); font-size:.9375rem; line-height:1.55}
+.rule p a{color:var(--subdued)}
+
+/* ===== Controls ===== */
+.controls{position:sticky; top:57px; z-index:40; background:var(--paper); border-bottom:1px solid var(--rule-soft);
+  padding:14px 0; margin-bottom:34px}
+.controls .wrap{display:flex; align-items:center; gap:14px; flex-wrap:wrap; padding:0 28px}
+.chips{display:flex; gap:7px; flex-wrap:wrap}
+.chip{font-family:var(--body); font-weight:700; font-size:.75rem; letter-spacing:.03em; padding:9px 16px; border-radius:var(--pill);
+  border:1px solid var(--ink); background:transparent; color:var(--ink); cursor:pointer; transition:.12s}
+.chip:hover{background:var(--hover-soft)}
+.chip[aria-pressed="true"]{background:var(--red-fill); border-color:var(--red-fill); color:#fff}
+.chip[aria-pressed="true"]:hover{background:var(--red-fill-hover); border-color:var(--red-fill-hover)}
+.chip.ghost{border-color:var(--rule); color:var(--subdued); font-weight:500}
+.chip.ghost[aria-pressed="true"]{background:var(--invert-bg); border-color:var(--invert-bg); color:var(--invert-fg)}
+.search{flex:1 1 220px; min-width:180px; position:relative}
+.search input{width:100%; font-family:var(--body); font-size:.9375rem; padding:10px 14px; border:1px solid var(--ink);
+  border-radius:var(--pill); background:var(--paper); color:var(--black)}
+.search input:focus{outline:2px solid var(--red); outline-offset:1px; border-color:var(--red)}
+.count{font-size:.75rem; letter-spacing:.08em; text-transform:uppercase; color:var(--subdued); font-weight:500; white-space:nowrap}
+
+/* ===== Practice cards ===== */
+.grp{margin:0 0 40px}
+.grp > h3{margin:0 0 4px; display:flex; align-items:center; gap:12px}
+.grp > h3 .bar{flex:1; height:1px; background:var(--rule-soft)}
+.cards{display:grid; grid-template-columns:repeat(auto-fill,minmax(330px,1fr)); gap:14px; margin-top:18px}
+.card{background:var(--paper); border:1px solid var(--rule-soft); border-left:3px solid var(--ok);
+  padding:18px 20px 16px; display:flex; flex-direction:column}
+.band .card{background:var(--paper)}
+.card.dont{border-left-color:var(--no)}
+.card .kind{font-size:.6875rem; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--ok); margin-bottom:8px}
+.card.dont .kind{color:var(--no)}
+.card h4{margin:0 0 9px; font-family:var(--disp); font-weight:600; font-size:1.0625rem; line-height:1.25}
+.card p{margin:0 0 12px; font-size:.875rem; line-height:1.55; color:var(--ink)}
+.card .srcs{margin-top:auto; padding-top:10px; border-top:1px solid var(--rule-soft); display:flex; flex-direction:column; gap:4px}
+.card .srcs a{font-size:.6875rem; line-height:1.35; color:var(--subdued); border:0; border-bottom:1px solid transparent; display:inline-block}
+.card .srcs a:before{content:"↗ "; color:var(--red)}
+.card .srcs a:hover{color:var(--black); border-bottom-color:var(--red)}
+.tracks{display:flex; gap:5px; margin-bottom:10px; flex-wrap:wrap}
+.tk{font-size:.625rem; font-weight:600; letter-spacing:.08em; text-transform:uppercase; padding:2px 7px; border-radius:var(--pill);
+  background:var(--teal-wash); color:var(--ink)}
+.empty{padding:50px 0; text-align:center; color:var(--subdued)}
+/* the ten that change outcomes */
+.musts{display:grid; gap:14px}
+.must{background:var(--paper); border:1px solid var(--rule-soft); border-left:3px solid var(--red);
+  padding:22px 26px; display:grid; grid-template-columns:52px 1fr; gap:20px; align-items:start}
+.must .mn{font-family:var(--disp); font-weight:700; font-size:1.75rem; line-height:1; color:var(--red); padding-top:1px}
+.must h4{margin:0 0 9px; font-family:var(--disp); font-weight:600; font-size:1.1875rem; line-height:1.25}
+.must .kind{font-size:.6875rem; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--ok); margin-bottom:7px}
+.must.dont{border-left-color:var(--no)}
+.must.dont .kind{color:var(--no)}
+.must p{margin:0 0 12px; font-size:.9375rem; line-height:1.6; color:var(--ink)}
+.must ul{margin:0 0 12px; padding-left:18px; display:flex; flex-direction:column; gap:5px}
+.must li{font-size:.875rem; line-height:1.5; color:var(--ink)}
+.must .line{margin:0 0 12px; padding:11px 15px; background:var(--warn-wash); border-left:3px solid var(--warn);
+  font-size:.9375rem; font-weight:600; line-height:1.5; color:var(--black)}
+.must .srcs{margin-top:4px; padding-top:10px; border-top:1px solid var(--rule-soft); display:flex; flex-direction:column; gap:4px}
+.must .srcs a{font-size:.6875rem; color:var(--subdued); border:0}
+.must .srcs a:before{content:"↗ "; color:var(--red)}
+.must .srcs a:hover{color:var(--black)}
+.mustbadge{text-decoration:none; border:0; font-size:.5625rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; padding:2px 7px;
+  border-radius:var(--pill); background:var(--red-fill); color:#fff; white-space:nowrap}
+@media (max-width:820px){.must{grid-template-columns:36px 1fr; gap:14px; padding:18px}}
+/* jargon footnotes */
+.fn{margin-top:12px; padding-top:10px; border-top:1px dotted var(--rule-soft); display:flex; flex-direction:column; gap:6px}
+.fn div{font-size:.6875rem; line-height:1.4; color:var(--subdued); display:grid; grid-template-columns:auto 1fr; gap:6px}
+.fn b{color:var(--ink); font-weight:600; white-space:nowrap}
+.fn b:after{content:""}
+.rule .fn{margin-top:10px}
+/* who's who */
+.who{display:grid; grid-template-columns:repeat(auto-fill,minmax(330px,1fr)); gap:12px; margin:6px 0 30px}
+.who div{background:var(--paper); border:1px solid var(--rule-soft); padding:14px 16px; scroll-margin-top:150px}
+.who div:target{border-color:var(--red); background:var(--warn-wash)}
+.who h4{margin:0 0 5px; font-family:var(--disp); font-weight:600; font-size:.9375rem}
+.who p{margin:0; font-size:.8125rem; line-height:1.5; color:var(--subdued)}
+.srcgrid a.person{border-bottom:1px dotted var(--rule); color:var(--red)}
+.srcgrid a.person:hover{border-bottom-style:solid; border-bottom-color:var(--red)}
+.gloss{columns:2; column-gap:32px; font-size:.8125rem; line-height:1.5; margin-bottom:8px}
+.gloss div{break-inside:avoid; margin-bottom:9px}
+.gloss b{font-family:var(--body); font-weight:700; color:var(--black)}
+.gloss span{color:var(--subdued)}
+@media (max-width:760px){.gloss{columns:1}}
+.yr{display:inline-block; font-size:.5625rem; font-weight:700; letter-spacing:.06em; padding:1px 5px; border-radius:3px;
+  margin-right:6px; vertical-align:1px; font-variant-numeric:tabular-nums}
+.y26{background:var(--y26-bg); color:var(--y26-fg)}
+.y25{background:var(--y25-bg); color:var(--y25-fg)}
+.yold{background:var(--yold-bg); color:var(--yold-fg)}
+.ydoc{background:var(--ydoc-bg); color:var(--ydoc-fg)}
+.legend{display:flex; gap:20px; flex-wrap:wrap; align-items:center; margin:0 0 26px; padding:14px 18px;
+  background:var(--paper); border:1px solid var(--rule-soft); font-size:.8125rem; color:var(--subdued)}
+.legend b{color:var(--black); font-weight:600}
+
+/* ===== Stats ===== */
+.stats{display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:14px}
+.stat{background:var(--paper); border:1px solid var(--rule-soft); padding:22px 22px 18px}
+.stat .n{font-family:var(--disp); font-weight:700; font-size:2.75rem; line-height:1.05; color:var(--black); letter-spacing:-.02em}
+.stat .n span{color:var(--red)}
+.stat .l{font-size:.9375rem; font-weight:600; line-height:1.35; margin:8px 0 12px}
+.stat .c{font-size:.8125rem; line-height:1.55; color:var(--subdued); padding-top:12px; border-top:1px solid var(--rule-soft)}
+.stat .c b{color:var(--ink); font-weight:600}
+.stat .srcs{margin-top:12px; display:flex; flex-direction:column; gap:4px}
+.stat .srcs a{font-size:.6875rem; color:var(--subdued); border:0}
+.stat .srcs a:before{content:"↗ "; color:var(--red)}
+.stat .srcs a:hover{color:var(--black)}
+
+/* ===== Failure patterns ===== */
+.fails{display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:14px}
+.fail{border:1px solid var(--rule-soft); background:var(--paper); padding:20px 22px}
+.fail h4{margin:0 0 10px; font-family:var(--disp); font-weight:600; font-size:1.0625rem; color:var(--black)}
+.fail .sym{font-size:.875rem; line-height:1.55; color:var(--ink); margin:0 0 12px}
+.fail .fix{font-size:.875rem; line-height:1.55; margin:0; padding:11px 14px; background:var(--ok-wash); border-left:3px solid var(--ok)}
+.fail .fix b{font-weight:700; text-transform:uppercase; font-size:.6875rem; letter-spacing:.12em; color:var(--ok); display:block; margin-bottom:4px}
+.fail .srcs{margin-top:12px}
+.fail .srcs a{font-size:.6875rem; color:var(--subdued); border:0; margin-right:12px}
+.fail .srcs a:before{content:"↗ "; color:var(--red)}
+
+/* ===== Tables ===== */
+.tw{overflow-x:auto; border:1px solid var(--rule-soft); background:var(--paper); margin-bottom:12px}
+table{width:100%; border-collapse:collapse; font-size:.875rem; min-width:640px}
+th{font-family:var(--body); font-weight:700; font-size:.6875rem; letter-spacing:.12em; text-transform:uppercase;
+  text-align:left; padding:14px 18px; background:var(--invert-bg); color:var(--invert-fg); vertical-align:bottom}
+td{padding:13px 18px; border-top:1px solid var(--rule-soft); vertical-align:top; line-height:1.45}
+tbody tr:hover td{background:var(--sand)}
+td:first-child{font-weight:600}
+.tnote{font-size:.8125rem; color:var(--subdued); margin:0 0 34px}
+
+/* ===== Myths ===== */
+.myth{border-top:1px solid var(--rule-soft); padding:20px 0; display:grid; grid-template-columns:minmax(240px,.85fr) 1.4fr; gap:26px}
+.myth:last-child{border-bottom:1px solid var(--rule-soft)}
+.myth .q{font-family:var(--disp); font-weight:600; font-size:1.0625rem; line-height:1.3; margin:0; position:relative; padding-left:20px}
+.myth .q:before{content:"✕"; position:absolute; left:0; top:1px; color:var(--no); font-family:var(--body); font-size:.875rem; font-weight:700}
+.myth .a{margin:0; font-size:.875rem; line-height:1.6; color:var(--ink)}
+.myth .a .srcs{margin-top:8px}
+.myth .a .srcs a{font-size:.6875rem; color:var(--subdued); border:0; margin-right:12px}
+.myth .a .srcs a:before{content:"↗ "; color:var(--red)}
+
+/* ===== Callout ===== */
+.callout{border-left:3px solid var(--teal); background:var(--teal-wash); padding:20px 24px; margin:26px 0}
+.callout h4{margin:0 0 8px; font-family:var(--disp); font-weight:600; font-size:1.0625rem}
+.callout p{margin:0 0 10px; font-size:.9375rem; line-height:1.6}
+.callout p:last-child{margin:0}
+.callout.warn{border-left-color:var(--warn); background:var(--warn-wash)}
+
+/* ===== Two-col debate ===== */
+.debate{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:18px}
+.side{border:1px solid var(--rule-soft); background:var(--paper); padding:20px 22px}
+.side h4{margin:0 0 10px; font-family:var(--disp); font-weight:600; font-size:1.0625rem}
+.side p{margin:0 0 10px; font-size:.875rem; line-height:1.55}
+.side .srcs a{font-size:.6875rem; color:var(--subdued); border:0; display:block; margin-top:4px}
+.side .srcs a:before{content:"↗ "; color:var(--red)}
+
+/* ===== Sources ===== */
+.srcgrid{columns:2; column-gap:36px; font-size:.8125rem; line-height:1.5}
+.srcgrid div{break-inside:avoid; margin-bottom:9px; padding-left:16px; text-indent:-16px}
+.srcgrid a{color:var(--ink); border-bottom:1px solid var(--rule-soft)}
+.srcgrid a:hover{border-bottom-color:var(--red)}
+
+/* ===== Footer ===== */
+footer{background:var(--hero-bg); color:rgba(255,255,255,.75); padding:48px 0 56px; font-size:.875rem}
+footer .wrap{display:grid; grid-template-columns:1fr auto; gap:30px; align-items:end}
+footer h4{font-family:var(--disp); color:var(--hero-fg); font-weight:600; font-size:1.25rem; margin:0 0 12px}
+footer p{margin:0 0 10px; max-width:64ch; line-height:1.6}
+footer a{color:var(--hero-fg); border-bottom-color:rgba(255,255,255,.4)}
+footer .logo svg{height:34px}
+
+/* ===== Responsive ===== */
+@media (max-width:820px){
+  .myth{grid-template-columns:1fr; gap:10px}
+  .debate{grid-template-columns:1fr}
+  .srcgrid{columns:1}
+  footer .wrap{grid-template-columns:1fr}
+  .rule{grid-template-columns:40px 1fr; gap:14px; padding:18px}
+  .controls{position:static}
+  section{padding:48px 0}
+}
+a:focus-visible, .chip:focus-visible, input:focus-visible{outline:2px solid var(--red); outline-offset:2px; border-radius:2px}
+@media (prefers-reduced-motion: reduce){
+  html{scroll-behavior:auto}
+  *{transition-duration:.01ms !important; animation-duration:.01ms !important}
+}
+@media print{
+  nav.sticky,.controls{display:none}
+  .hero:after{display:none}
+  body{font-size:11pt}
+  .card,.stat,.fail{break-inside:avoid}
+  section{padding:20px 0}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <span class="logo"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 34" role="img" aria-label="Alec Wyand">
+  <text x="0" y="17" font-family="Georgia, 'Times New Roman', serif" font-size="17" font-weight="700" letter-spacing="0.5" fill="currentColor">Alec Wyand</text>
+  <text x="0" y="30" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif" font-size="8" letter-spacing="2.2" fill="currentColor" opacity="0.62">FIELD GUIDE</text>
+</svg></span>
+    <span class="eyebrow">Engineering Enablement &middot; SDLC</span>
+  </div>
+</header>
+
+<div class="hero">
+  <div class="wrap">
+    <h1>Working<br>With <em>Agents</em></h1>
+    <p class="lede">A field guide to using AI well in a software development lifecycle — for engineers, QA, and product. Every rule here traces to a primary source from a frontier lab, a controlled study, or a practitioner whose work you can check, and every citation is stamped with the year it was published. <strong>Nothing in here is opinion dressed as evidence.</strong> Where the research disagrees, we say so.</p>
+    <p class="lede">Two things to know before you read. First: the practices are date-stamped, because coding-agent capability stepped up discontinuously around late 2025 and guidance written before that was authored against a weaker tool. Second: this was written for a team working in PCI scope, so several rules that read as best practice elsewhere are non-negotiable there — a useful lens even if you are not.</p>
+    <div class="metaline">
+      <span>By <b>Alec Wyand</b></span>
+      <span>Version <b>1.4</b></span>
+      <span>Compiled <b>20 Aug 2026</b></span>
+      <span><b>__SRCCOUNT__</b> cited sources</span>
+      <span>Sources re-verified <b>4 Sep 2026</b></span>
+      <span>Review cadence <b>quarterly</b></span>
+    </div>
+  </div>
+</div>
+
+<nav class="sticky">
+  <div class="wrap">
+    <a href="#rules">The ten rules</a>
+    <a href="#must">Ten that change outcomes</a>
+    <a href="#practices">Do &amp; don't</a>
+    <a href="#evidence">The evidence</a>
+    <a href="#failures">Failure patterns</a>
+    <a href="#tables">Decision tables</a>
+    <a href="#open">Open questions</a>
+    <a href="#myths">Commonly misquoted</a>
+    <a href="#sources">Sources</a>
+  </div>
+</nav>
+
+<section id="rules">
+  <div class="wrap">
+    <div class="shead"><span class="snum">01</span><h2>The ten rules</h2></div>
+    <p class="sdek">If you read nothing else, read these. They are the practices where the labs, the studies, and the practitioners all agree — and the ones whose violation shows up in incident reviews.</p>
+    <div class="rules" id="rulesBox"></div>
+  </div>
+</section>
+
+<section id="must">
+  <div class="wrap">
+    <div class="shead"><span class="snum">02</span><h2>The ten that change outcomes</h2></div>
+    <p class="sdek">Ten of the 119 that a competent engineer probably isn&rsquo;t already doing, that move something measurable, and that you can act on this week. If the list reads oddly for a best-practices highlight reel, that&rsquo;s the shape of the evidence rather than the shape of the selection: <strong>six of these ten are things to stop doing or constrain, not new techniques to adopt.</strong> The measured wins in agentic development come from removing failure modes, not from cleverer prompting.</p>
+    <div class="musts" id="mustBox"></div>
+  </div>
+</section>
+
+<section id="practices" class="band">
+  <div class="wrap">
+    <div class="shead"><span class="snum">03</span><h2>Do &amp; don't, by discipline</h2></div>
+    <p class="sdek">Filter to your role, or search. Every card carries its source, stamped with the year that source was published — click through before you argue with it.</p>
+    <div class="legend">
+      <span><span class="yr y26">2026</span> current</span>
+      <span><span class="yr y25">2025</span> older &mdash; the card text says if it has been superseded</span>
+      <span><span class="yr yold">2024</span> historical</span>
+      <span><span class="yr ydoc">docs</span> living documentation, no fixed date</span>
+      <span style="margin-left:auto"><b>Sources re-verified 21 Aug 2026.</b></span>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="wrap">
+      <div class="chips" id="trackChips">
+        <button class="chip" data-tr="all" aria-pressed="true">Everything</button>
+        <button class="chip" data-tr="eng" aria-pressed="false">Engineering</button>
+        <button class="chip" data-tr="qa" aria-pressed="false">QA</button>
+        <button class="chip" data-tr="pm" aria-pressed="false">Product &amp; BA</button>
+        <button class="chip" data-tr="sec" aria-pressed="false">Security &amp; PCI</button>
+      </div>
+      <div class="chips" id="kindChips">
+        <button class="chip ghost" data-k="do" aria-pressed="false">Do only</button>
+        <button class="chip ghost" data-k="dont" aria-pressed="false">Don't only</button>
+        <button class="chip ghost" id="oldChip" aria-pressed="false" title="Show only practices whose sources include pre-2026 material">Cites pre-2026</button>
+      </div>
+      <div class="search"><input id="q" type="search" placeholder="Search practices, e.g. &ldquo;tests&rdquo;, &ldquo;context&rdquo;, &ldquo;sandbox&rdquo;" aria-label="Search practices"></div>
+      <span class="count" id="count"></span>
+    </div>
+  </div>
+  <div class="wrap"><div id="cardsBox"></div></div>
+</section>
+
+<section id="evidence">
+  <div class="wrap">
+    <div class="shead"><span class="snum">04</span><h2>The evidence, with its caveats</h2></div>
+    <p class="sdek">These are the numbers that should change how you work. Each one is shown with the limitation that makes it honest — because a statistic you can't defend in a design review is worse than no statistic.</p>
+    <div class="stats" id="statsBox"></div>
+    <div class="callout">
+      <h4>The one finding to internalise</h4>
+      <p>Models produce code that <em>runs</em> at a 95% rate and code that is <em>secure</em> at 55% — and the security number has not improved in two years, nor does it improve with model size. The thing your eye checks (does it work?) is orthogonal to the thing that bites you.</p>
+      <p>Practical translation for a payments team: treat agent-generated code as untrusted input to your pipeline. SAST on every agent-authored PR, not a sample. Extra scrutiny on output encoding, logging, and Java specifically. No "the model is smarter now" exemptions.</p>
+    </div>
+  </div>
+</section>
+
+<section id="failures" class="band">
+  <div class="wrap">
+    <div class="shead"><span class="snum">05</span><h2>Named failure patterns</h2></div>
+    <p class="sdek">Learn to recognise these by name. Most bad agent sessions are one of ten shapes, and each has a known fix.</p>
+    <div class="fails" id="failsBox"></div>
+  </div>
+</section>
+
+<section id="tables">
+  <div class="wrap">
+    <div class="shead"><span class="snum">06</span><h2>Decision tables</h2></div>
+    <p class="sdek">Three questions come up constantly: should I delegate this, how much process does it need, and which mechanism do I reach for. Print these.</p>
+
+    <h3>What to delegate</h3>
+    <div class="tw" id="tblDelegate"></div>
+    <p class="tnote">The right column is adapted from GitHub's published do-not-delegate list, with payments-specific additions. The last row is deliberate: skill-building is a valid reason to decline delegation, and GitHub is the only vendor that says so out loud.</p>
+
+    <h3>How much process</h3>
+    <div class="tw" id="tblProcess"></div>
+    <p class="tnote">Process weight scales with <em>uncertainty</em>, not task size. A large but familiar migration needs less ceremony than a small change in code nobody understands.</p>
+
+    <h3>Which steering mechanism</h3>
+    <div class="tw" id="tblMech"></div>
+    <p class="tnote">The distinction that matters most is the last two rows. An instruction is interpreted and can be lost to compaction. A hook fires on its event. A deny rule blocks in every mode. Escalate to the deterministic option the moment a rule genuinely has to hold.</p>
+  </div>
+</section>
+
+<section id="open" class="band">
+  <div class="wrap">
+    <div class="shead"><span class="snum">07</span><h2>Where the experts genuinely disagree</h2></div>
+    <p class="sdek">Two live disagreements you should know about, so nobody on this team cites one side as settled.</p>
+
+    <h3>Should we tell agents to write tests first?</h3>
+    <div class="debate">
+      <div class="side">
+        <h4>Yes — it fits the failure mode</h4>
+        <p>Willison calls red/green TDD a "fantastic fit for coding agents," because the biggest risk with an agent is that it writes code that doesn't work, and every good model understands the shorthand. Kent Beck called TDD a superpower with agents precisely because agents introduce regressions.</p>
+        <div class="srcs">
+          <a href="https://simonwillison.net/guides/agentic-engineering-patterns/red-green-tdd/" target="_blank" rel="noopener">Red/green TDD — Willison, Mar 2026</a>
+          <a href="https://newsletter.kentbeck.com/p/augmented-coding-beyond-the-vibes" target="_blank" rel="noopener">Augmented Coding — Beck, Jun 2025</a>
+        </div>
+      </div>
+      <div class="side">
+        <h4>Not as a mandated process</h4>
+        <p>Böckeler ran the experiment — three task sizes, judged solution pairs — and found "no clearly discernable difference," with non-TDD runs sometimes scoring <em>higher</em> on design and test quality, at 3× the tokens. Her mechanism: test-first instructions work against the up-front design step agents benefit from. She's stopped mandating it and recommends mutation testing and static-analysis-triggered refactoring instead.</p>
+        <div class="srcs">
+          <a href="https://martinfowler.com/articles/exploring-gen-ai/tdd-in-the-agent-loop.html" target="_blank" rel="noopener">TDD inside the agent loop — Böckeler, Aug 2026</a>
+        </div>
+      </div>
+    </div>
+    <div class="callout">
+      <h4>Where we land</h4>
+      <p>Nobody disagrees that tests must exist and must be executed. The disagreement is narrowly about prescribing red-green-refactor as the agent's <em>internal</em> process. Böckeler's is the later evidence and the only experimental evidence, so: <strong>we mandate the outcome, not the process.</strong> Tests exist, tests run, test files are read-only to the implementing agent, and the writer is not the grader. How you get there is your call.</p>
+      <p style="margin-top:12px"><strong>One thing to know before you cite this as a debate:</strong> as of late Aug 2026 nobody on the pro-TDD side has publicly answered Böckeler's result. Willison has not revised the chapter; Beck's nearest 2026 artifact is an <a href="https://newsletter.kentbeck.com/p/genie-sessions-tcr-skill" target="_blank" rel="noopener">exploratory piece on enforcing test-commit-revert inside the agent loop</a> (Apr 2026) that predates her memo and reaches no verdict. This is an open question with one experiment on the table, not a settled argument.</p>
+    </div>
+
+    <h3>How much autonomy?</h3>
+    <div class="debate">
+      <div class="side">
+        <h4>Maximum, with the sandbox as the only control</h4>
+        <p>Willison: "I run in YOLO mode all the time" — and in the same breath, "the only solution that's credible is to run coding agents in a sandbox," ideally on someone else's computer. Ronacher disables permission checks entirely, contained by Docker. The value is real and so is the containment requirement.</p>
+        <div class="srcs">
+          <a href="https://simonwillison.net/2025/Oct/22/living-dangerously-with-claude/" target="_blank" rel="noopener">Living dangerously with Claude — Willison, Oct 2025</a>
+          <a href="https://lucumr.pocoo.org/2025/6/12/agentic-coding/" target="_blank" rel="noopener">Agentic Coding Recommendations — Ronacher, Jun 2025</a>
+        </div>
+      </div>
+      <div class="side">
+        <h4>High on execution, zero at the merge boundary</h4>
+        <p>Hashimoto: "I'm not shipping code I don't understand," and "please don't ever ship AI-written code without a thorough manual review." Note that Willison's own anti-patterns chapter says the same thing — the resolution is that autonomy governs <em>execution inside a sandbox</em>, never <em>review before merge</em>. That is the most commonly misread point in this literature.</p>
+        <div class="srcs">
+          <a href="https://mitchellh.com/writing/non-trivial-vibing" target="_blank" rel="noopener">Vibing a Non-Trivial Feature — Hashimoto, Oct 2025</a>
+          <a href="https://simonwillison.net/guides/agentic-engineering-patterns/anti-patterns/" target="_blank" rel="noopener">Anti-patterns — Willison, Mar 2026</a>
+        </div>
+      </div>
+    </div>
+    <div class="callout warn">
+      <h4>Where we land — and this one isn't negotiable</h4>
+      <p>Full execution autonomy is fine inside a sandbox with no path to production credentials and default-deny egress. It is <strong>prohibited</strong> on any host that can reach the CDE, on any host holding CDE credentials, and in CI. Permission-bypass flags are a documented attacker primitive, not just a footgun — the s1ngularity npm compromise invoked developers' own AI CLIs with exactly those flags to steal 1,000+ tokens and ~20,000 files.</p>
+      <p>And zero autonomy at the merge boundary, always. PCI DSS 6.2.3 requires custom software to be reviewed before release; 6.2.3.1 adds a non-author reviewer and management approval <em>where that review is manual</em>, and 6.2.3 does permit automated review tools. The policy this guide recommends goes further: a human other than the requesting engineer reviews every agent-authored diff, with AI review as an additional pass rather than the one that counts.</p>
+    </div>
+  </div>
+</section>
+
+<section id="myths">
+  <div class="wrap">
+    <div class="shead"><span class="snum">08</span><h2>Commonly misquoted</h2></div>
+    <p class="sdek">These statistics circulate in a distorted form. If someone cites one at you, here is what the source actually says. Getting these right is how this team keeps its credibility in AI conversations.</p>
+    <div id="mythsBox"></div>
+  </div>
+</section>
+
+<section id="sources" class="band">
+  <div class="wrap">
+    <div class="shead"><span class="snum">09</span><h2>Sources</h2></div>
+    <p class="sdek">Who the individual practitioners are and why they carry weight, every piece of jargon the guide uses, then every source, grouped by origin. Anything we could not verify was left out rather than softened — where a claim rests on a single vendor blog or a conference talk rather than a paper, the card says so.</p>
+    <div id="sourcesBox"></div>
+    <div class="callout warn">
+      <h4>Source freshness review — 21 Aug 2026, corrections 4 Sep 2026</h4>
+      <p>Every pre-2026 source was re-checked against its current successor. Most held; six did not, and the guide above reflects the corrections rather than the originals:</p>
+      <ul style="margin:10px 0 10px 18px; padding:0">
+        <li><strong>OpenAI's GPT-5.2 prompting guide was superseded twice</strong> (GPT-5.5 in Apr 2026, GPT-5.6 in Jul 2026) and moved out of the Cookbook. Three practices it endorsed are simply absent from the current text, and the "ask 1&ndash;3 clarifying questions" rule became conditional. The headline change: don't port old prompts, start from the smallest one that preserves the contract.</li>
+        <li><strong>Anthropic reversed its long-running-harness guidance</strong> in Mar 2026 — the one-feature-per-session structure was removed because current models decompose natively. Scaffolding is now something you strip as models improve.</li>
+        <li><strong>"Multi-agent is a poor fit for most coding work" no longer holds.</strong> Anthropic shipped agent teams and published a parallel-agent compiler build. The cost caveat survives; the prohibition doesn't.</li>
+        <li><strong>The AGENTS.md study's numbers were materially wrong in v1.</strong> The Jun 2026 revision finds no statistically significant benefit in either direction (+2.4%, p=0.21) against a highly significant ~20% cost penalty.</li>
+        <li><strong>Package-hallucination rates dropped roughly fourfold</strong> on the 2026 model cohort — 4.6&ndash;6.1% against a 19.7% baseline. Real improvement; still not zero.</li>
+        <li><strong>Veracode published a newer edition</strong> in Jul 2026: security pass rate 56%, up one point in two years.</li>
+      </ul>
+      <p><strong>Independent fact-check, 4 Sep 2026.</strong> A separate reviewer with no access to the drafting context re-opened the cited sources and found six defects, all corrected above: PCI DSS 6.2.3.1 stated unconditionally when the standard makes it conditional on manual review; a false-positive-reduction figure attributed to a code-review benchmark that does not contain it; METR&rsquo;s confidence interval given as +2% to +38% when it is +2% to +39%, with the wrong claim about where it appears; requirement 12.10.7 applied to transmission when it governs discovery of stored data; a Veracode caveat asserting per-category figures were not restated when they were; and two executive quotations attached to a paper that does not contain them. Four of the six were attribution errors rather than wrong facts &mdash; the number was right, the source was not. That is the failure mode worth internalising from this exercise.</p>
+      <p>One live shift worth watching rather than acting on yet: in Aug 2026 both Willison and Osmani argued that line-by-line review does not scale past a few parallel agents and that other verification strategies matter more. That does not relax accountability at the merge boundary &mdash; someone other than the author still owns the outcome &mdash; but it does mean "read every line" is now a contested mechanism rather than a consensus one.</p>
+    </div>
+    <div class="callout">
+      <h4>Known gaps, stated plainly</h4>
+      <p><strong>No 2026 DORA State of DevOps survey exists yet.</strong> The 2026 DORA artifact is an ROI modelling framework, and its headline figures are outputs of an illustrative 500-person scenario — not measured findings. Don't cite them as evidence.</p>
+      <p><strong>PCI SSC has published no standard specific to coding agents.</strong> It has published AI Principles for payment environments and guidance for assessors using AI. Existing PCI DSS requirements apply unchanged. Anyone claiming there is an "AI requirement" is wrong — and requirement numbers in any policy document must be verified against the official standard, not against secondary summaries including this one.</p>
+      <p><strong>Nothing rigorous exists yet on fully multi-agent SDLC workflows</strong> (agent writes → agent reviews → agent deploys). The closest evidence — serial task completion collapsing to 20% across a pipeline — argues for caution, not enthusiasm.</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div>
+      <h4>Why this exists</h4>
+      <p>The question behind it: how does anyone actually know they are using AI <em>well</em>, rather than just using it a lot? Long practice is not evidence of good practice. Nobody in the room had an answer worth trusting, so this started as a test of my own habits — every claim traced back to a primary source and checked against how I was actually working.</p>
+      <p>Several of my habits did not survive that. The corrections are in here, and they changed how I work day to day. That is the standard the document has to meet: a guide worth following has to be able to tell its own author he was wrong. Beyond that, it exists so an organization adopting AI is supercharged by it rather than bogged down by it, and so that anyone citing a practice from it can defend where the practice came from.</p>
+      <p>Written by Alec Wyand for an internal engineering organization, drafted with AI assistance, and fact-checked line by line against every cited source. Company-specific material has been removed from this edition.</p>
+      <h4 style="margin-top:26px">Keep this current</h4>
+      <p>Capability doubles roughly every four months, so treat this document the way you'd treat a dependency: review it quarterly, date-stamp what changes, and delete what's been superseded. When a practice here stops matching reality, the fix is a pull request, not a workaround.</p>
+      <p>Corrections welcome — bring the source.</p>
+    </div>
+    <span class="logo"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 34" role="img" aria-label="Alec Wyand">
+  <text x="0" y="17" font-family="Georgia, 'Times New Roman', serif" font-size="17" font-weight="700" letter-spacing="0.5" fill="currentColor">Alec Wyand</text>
+  <text x="0" y="30" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif" font-size="8" letter-spacing="2.2" fill="currentColor" opacity="0.62">FIELD GUIDE</text>
+</svg></span>
+  </div>
+</footer>
+
+<script>
+/* ===================== CONTENT DATA ===================== */
+
+/* Source shorthand registry — every card cites at least one. */
+const S = {
+  ccbp:   ["Best practices for Claude Code — Anthropic docs", "https://code.claude.com/docs/en/best-practices"],
+  ccwork: ["How Claude Code works — Anthropic docs", "https://code.claude.com/docs/en/how-claude-code-works"],
+  ccfeat: ["Extend Claude Code — Anthropic docs", "https://code.claude.com/docs/en/features-overview"],
+  ccperm: ["Choose a permission mode — Anthropic docs", "https://code.claude.com/docs/en/permission-modes"],
+  ccsub:  ["Subagents — Anthropic docs", "https://code.claude.com/docs/en/sub-agents"],
+  ccteam: ["Orchestrate teams of Claude Code sessions — Anthropic docs", "https://code.claude.com/docs/en/agent-teams"],
+  cchook: ["Automate actions with hooks — Anthropic docs", "https://code.claude.com/docs/en/hooks-guide"],
+  cccost: ["Manage costs effectively — Anthropic docs", "https://code.claude.com/docs/en/costs"],
+  ccsec:  ["Security — Anthropic docs", "https://code.claude.com/docs/en/security"],
+  ccsand: ["Configure the sandboxed Bash tool — Anthropic docs", "https://code.claude.com/docs/en/sandboxing"],
+  ccsandenv:["Choose a sandbox environment — Anthropic docs", "https://code.claude.com/docs/en/sandbox-environments"],
+  cchead: ["Run Claude Code programmatically — Anthropic docs", "https://code.claude.com/docs/en/headless"],
+  ccgha:  ["Claude Code GitHub Actions — Anthropic docs", "https://code.claude.com/docs/en/github-actions"],
+  ccchk:  ["Checkpointing — Anthropic docs", "https://code.claude.com/docs/en/checkpointing"],
+  ccwt:   ["Run parallel sessions with worktrees — Anthropic docs", "https://code.claude.com/docs/en/worktrees"],
+  ctx:    ["Effective context engineering for AI agents — Anthropic, Sep 2025", "https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents"],
+  bea:    ["Building Effective AI Agents — Anthropic, Dec 2024", "https://www.anthropic.com/engineering/building-effective-agents"],
+  mars:   ["How we built our multi-agent research system — Anthropic, Jun 2025", "https://www.anthropic.com/engineering/multi-agent-research-system"],
+  harn:   ["Effective harnesses for long-running agents — Anthropic, Nov 2025 (superseded)", "https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents"],
+  evals:  ["Demystifying evals for AI agents — Anthropic, Jan 2026", "https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents"],
+  tests:  ["Define success criteria and build evaluations — Claude Platform docs", "https://platform.claude.com/docs/en/test-and-evaluate/develop-tests"],
+  halluc: ["Reduce hallucinations — Claude Platform docs", "https://platform.claude.com/docs/en/test-and-evaluate/strengthen-guardrails/reduce-hallucinations"],
+  contain:["How we contain Claude across products — Anthropic, May 2026", "https://www.anthropic.com/engineering/how-we-contain-claude"],
+  ciso:   ["A CISO's guide to agentic AI — Anthropic, Jul 2026", "https://claude.com/blog/ciso-guide-to-agentic-ai"],
+  usage:  ["Data usage — Claude Code docs", "https://code.claude.com/docs/en/data-usage"],
+  expert: ["How Claude Code is used in practice — Anthropic, Jun 2026", "https://www.anthropic.com/research/claude-code-expertise"],
+  skills: ["How AI assistance impacts the formation of coding skills — Anthropic, Jan 2026", "https://www.anthropic.com/research/AI-assistance-coding-skills"],
+  antteams:["How Anthropic teams use Claude Code — Jul 2025", "https://claude.com/blog/how-anthropic-teams-use-claude-code"],
+  scaling:["Scaling Agentic Coding Across Your Organization — Anthropic (PDF)", "https://resources.anthropic.com/hubfs/Scaling%20agentic%20coding%20across%20your%20organization.pdf"],
+
+  oaguide:["A practical guide to building agents — OpenAI (PDF)", "https://cdn.openai.com/business-guides-and-resources/a-practical-guide-to-building-agents.pdf"],
+  oareas: ["Reasoning best practices — OpenAI docs", "https://developers.openai.com/api/docs/guides/reasoning-best-practices"],
+  oacodex:["Codex Prompting Guide — OpenAI, Feb 2026", "https://developers.openai.com/cookbook/examples/gpt-5/codex_prompting_guide"],
+  oaplans:["Using PLANS.md for multi-hour problem solving — OpenAI, Oct 2025", "https://developers.openai.com/cookbook/articles/codex_exec_plans"],
+  oaguard:["Guardrails and human review — OpenAI docs", "https://developers.openai.com/api/docs/guides/agents/guardrails-approvals"],
+  oaeval: ["Evaluation best practices — OpenAI docs", "https://developers.openai.com/api/docs/guides/evaluation-best-practices"],
+  oafn:   ["Function calling — OpenAI docs", "https://developers.openai.com/api/docs/guides/function-calling"],
+  oagov:  ["Building Governed AI Agents — OpenAI, Feb 2026", "https://developers.openai.com/cookbook/examples/partners/agentic_governance_guide/agentic_governance_cookbook"],
+  oa52:   ["GPT-5.2 Prompting Guide — OpenAI, Dec 2025 (superseded)", "https://developers.openai.com/cookbook/examples/gpt-5/gpt-5-2_prompting_guide"],
+  oa56:   ["GPT-5.6 prompt guidance — OpenAI, Jul 2026", "https://developers.openai.com/api/docs/guides/prompt-guidance?model=gpt-5.6"],
+  harn26: ["Harness design for long-running application development — Anthropic, Mar 2026", "https://www.anthropic.com/engineering/harness-design-long-running-apps"],
+  parclaudes:["Building a C compiler with a team of parallel Claudes — Anthropic, Feb 2026", "https://www.anthropic.com/engineering/parallel-claudes"],
+  gem35:  ["What's new in Gemini 3.5 — Google, Aug 2026", "https://ai.google.dev/gemini-api/docs/whats-new-gemini-3.5"],
+  veracode26:["2026 GenAI Code Security Report — Veracode, Jul 2026", "https://www.veracode.com/blog/2026-genai-code-security-report-ai-risk/"],
+  pkg26:  ["The Range Shrinks, the Threat Remains: package hallucination on the 2026 cohort — arXiv:2605.17062v3, Aug 2026", "https://arxiv.org/abs/2605.17062"],
+  specbench:["SpecBench: validation-vs-held-out gap — arXiv:2605.21384, May 2026", "https://arxiv.org/abs/2605.21384"],
+  swreview:["More than just code review — Simon Willison, Aug 2026", "https://simonwillison.net/2026/Aug/22/more-than-just-code-review/"],
+  osmaniloop:["Practical Loop Engineering — Addy Osmani, Aug 2026", "https://addyo.substack.com/p/practical-loop-engineering"],
+  karpseq:["Agentic engineering (Sequoia AI Ascent) — Karpathy, Apr 2026", "https://karpathy.bearblog.dev/sequoia-ascent-2026/"],
+  becktcr:["Genie Sessions: TCR Skill — Kent Beck, Apr 2026", "https://newsletter.kentbeck.com/p/genie-sessions-tcr-skill"],
+  metrsurvey:["Technical Worker Productivity Survey — METR, May 2026", "https://metr.org/research/"],
+  oaswe:  ["Why we no longer evaluate SWE-bench Verified — OpenAI, Feb 2026", "https://openai.com/index/why-we-no-longer-evaluate-swe-bench-verified/"],
+
+  adksafe:["Safety and Security for AI Agents — Google ADK", "https://adk.dev/safety/"],
+  adkeval:["Evaluate — Google ADK", "https://adk.dev/evaluate/"],
+  gem3:   ["Gemini 3 developer guide — Google (deprecated page)", "https://ai.google.dev/gemini-api/docs/gemini-3"],
+  gemthink:["Gemini thinking — Google, Aug 2026", "https://ai.google.dev/gemini-api/docs/thinking"],
+  dm3:    ["The Three Layers of Agent Security — Google DeepMind, Jun 2026 (PDF)", "https://storage.googleapis.com/deepmind-media/DeepMind.com/Blog/securing-the-future-of-ai-agents/three-layers-of-agent-security.pdf"],
+  pair:   ["User Needs + Defining Success — Google PAIR Guidebook", "https://pair.withgoogle.com/chapter/user-needs/"],
+
+  agentsmd:["AGENTS.md open spec", "https://agents.md/"],
+  ghtasks:["Best practices for using Copilot to work on tasks — GitHub docs", "https://docs.github.com/copilot/how-tos/agents/copilot-coding-agent/best-practices-for-using-copilot-to-work-on-tasks"],
+  ghrisk: ["Risks and mitigations for Copilot cloud agent — GitHub docs", "https://docs.github.com/en/copilot/concepts/agents/cloud-agent/risks-and-mitigations"],
+  mscaf:  ["Govern and secure AI agents across the organization — Microsoft, Jun 2026", "https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ai-agents/governance-security-across-organization"],
+  msfoundry:["Evaluate your AI agents — Microsoft Foundry, Jul 2026", "https://learn.microsoft.com/en-us/azure/foundry/observability/how-to/evaluate-agent"],
+  msr:    ["Agentic Coding in the Wild: Copilot at Production Scale — Microsoft Research, Aug 2026 (PDF)", "https://www.microsoft.com/en-us/research/wp-content/uploads/2026/08/ghcp_traces-6.pdf"],
+
+  kirobp: ["Spec best practices — Kiro docs, Aug 2026", "https://kiro.dev/docs/specs/best-practices/"],
+  kiroreq:["Requirements-First Workflow — Kiro docs", "https://kiro.dev/docs/specs/feature-specs/requirements-first/"],
+  kiroperm:["Permissions — Kiro docs, Aug 2026", "https://kiro.dev/docs/permissions/"],
+  kirosteer:["Steering — Kiro docs, Aug 2026", "https://kiro.dev/docs/steering/"],
+  speckit:["github/spec-kit", "https://github.com/github/spec-kit"],
+
+  metr:   ["Measuring the impact of early-2025 AI on experienced developers — METR, Jul 2025", "https://metr.org/blog/2025-07-10-early-2025-ai-experienced-os-dev-study/"],
+  metrpaper:["Measuring the Impact of Early-2025 AI on Experienced OSS Developer Productivity — arXiv:2507.09089", "https://arxiv.org/abs/2507.09089"],
+  metrtrack:["AI task-length time horizons tracker — METR", "https://metr.org/time-horizons/"],
+  pinj:   ["Mitigating the risk of prompt injections in browser use — Anthropic, Nov 2025", "https://www.anthropic.com/research/prompt-injection-defenses"],
+  metr26: ["Changing our developer productivity experiment design — METR, Feb 2026", "https://metr.org/blog/2026-02-24-uplift-update/"],
+  metrth: ["Time Horizon 1.1 — METR, Jan 2026", "https://metr.org/blog/2026-1-29-time-horizon-1-1/"],
+  dora25: ["2025 State of AI-assisted Software Development — DORA (PDF)", "https://services.google.com/fh/files/misc/2025_state_of_ai_assisted_software_development.pdf"],
+  doracap:["2025 DORA AI Capabilities Model (PDF)", "https://services.google.com/fh/files/misc/2025_dora_ai_capabilities_model.pdf"],
+  dorroi: ["ROI of AI-assisted Software Development — DORA, Apr 2026", "https://dora.dev/ai/roi/report/"],
+  veracode:["Spring 2026 GenAI Code Security Update — Veracode, Mar 2026 (superseded)", "https://www.veracode.com/blog/spring-2026-genai-code-security/"],
+  gitclear:["The Maintainability Gap: 2026 AI Code Quality Research — GitClear", "https://www.gitclear.com/the_ai_code_quality_maintainability_gap"],
+  so25:   ["2025 Stack Overflow Developer Survey — AI section", "https://survey.stackoverflow.co/2025/ai"],
+  crab:   ["Code Review Agent Benchmark (c-CRAB) — arXiv:2603.23448v3, Apr 2026", "https://arxiv.org/abs/2603.23448v3"],
+  twoX:   ["AI Writes Faster Than Humans Can Review — arXiv:2607.01904, Jul 2026", "https://arxiv.org/abs/2607.01904"],
+  agentsmdpaper:["Evaluating AGENTS.md — arXiv:2602.11988v2, Jun 2026", "https://arxiv.org/abs/2602.11988v2"],
+  impossible:["ImpossibleBench: Measuring LLMs' Propensity of Exploiting Test Cases — arXiv:2510.20270, Oct 2025", "https://arxiv.org/abs/2510.20270"],
+  mutation:["Do Coverage and Mutation Scores of LLM-Generated Test Suites Correlate with Effectiveness? — arXiv:2607.22880, Jul 2026", "https://arxiv.org/html/2607.22880v1"],
+  slop:   ["We Have a Package for You! (package hallucination) — USENIX Security 2025", "https://www.usenix.org/system/files/usenixsecurity25-spracklen.pdf"],
+  ramp:   ["RAMP: multi-stage agentic workflows — arXiv:2605.27492, May 2026", "https://arxiv.org/abs/2605.27492"],
+  workslop:["AI-Generated \"Workslop\" Is Destroying Productivity — HBR, Sep 2025", "https://hbr.org/2025/09/ai-generated-workslop-is-destroying-productivity"],
+  workslop2:["Why People Create AI \"Workslop\" — HBR, Jan 2026", "https://hbr.org/2026/01/why-people-create-ai-workslop-and-how-to-stop-it"],
+  betterup:["Workslop research — BetterUp Labs + Stanford Social Media Lab, Sep 2025", "https://www.betterup.com/workslop"],
+
+  trifecta:["The lethal trifecta for AI agents — Simon Willison, Jun 2025", "https://simonwillison.net/2025/Jun/16/the-lethal-trifecta/"],
+  swloops:["Designing agentic loops — Simon Willison, Sep 2025", "https://simonwillison.net/2025/Sep/30/designing-agentic-loops/"],
+  swve:   ["Vibe engineering — Simon Willison, Oct 2025", "https://simonwillison.net/2025/Oct/7/vibe-engineering/"],
+  swanti: ["Anti-patterns — Agentic Engineering Patterns, Simon Willison, Mar 2026", "https://simonwillison.net/guides/agentic-engineering-patterns/anti-patterns/"],
+  swtdd:  ["Red/green TDD — Agentic Engineering Patterns, Simon Willison, Mar 2026", "https://simonwillison.net/guides/agentic-engineering-patterns/red-green-tdd/"],
+  swmanual:["Agentic manual testing — Simon Willison, Mar 2026", "https://simonwillison.net/guides/agentic-engineering-patterns/agentic-manual-testing/"],
+  swpar:  ["Parallel coding agents — Simon Willison, Oct 2025", "https://simonwillison.net/2025/Oct/5/parallel-coding-agents/"],
+  swsand: ["Living dangerously with Claude — Simon Willison, Oct 2025", "https://simonwillison.net/2025/Oct/22/living-dangerously-with-claude/"],
+  swcheap:["Writing code is cheap now — Simon Willison, Mar 2026", "https://simonwillison.net/guides/agentic-engineering-patterns/code-is-cheap/"],
+  swinflect:["The November 2025 inflection — Simon Willison, 2025-26", "https://simonwillison.net/tags/november-2025-inflection/"],
+
+  karp425:["Karpathy's \"tight leash\" workflow — reported Apr 2025", "https://visualstudiomagazine.com/articles/2025/04/25/vibe-coding-pioneer-advises-tight-leash-to-rein-in-ai-bs.aspx"],
+  karpsw: ["Software Is Changing (Again) — Karpathy, Jun 2025 (transcript)", "https://singjupost.com/andrej-karpathy-software-is-changing-again/"],
+  karpdw: ["Karpathy on Dwarkesh — Oct 2025 (transcript)", "https://www.dwarkesh.com/p/andrej-karpathy"],
+  karpae: ["Karpathy on agentic engineering, Feb 2026", "https://thenewstack.io/vibe-coding-is-passe/"],
+
+  mh:     ["Vibing a Non-Trivial Ghostty Feature — Mitchell Hashimoto, Oct 2025", "https://mitchellh.com/writing/non-trivial-vibing"],
+  mh26:   ["Mitchell Hashimoto — The Pragmatic Engineer, Feb 2026", "https://newsletter.pragmaticengineer.com/p/mitchell-hashimoto"],
+  ronach: ["Agentic Coding Recommendations — Armin Ronacher, Jun 2025", "https://lucumr.pocoo.org/2025/6/12/agentic-coding/"],
+  ronach2:["Things That Didn't Work — Armin Ronacher, Jul 2025", "https://lucumr.pocoo.org/2025/7/30/things-that-didnt-work/"],
+  ronach3:["The Coming Loop — Armin Ronacher, Jun 2026", "https://lucumr.pocoo.org/2026/6/23/the-coming-loop/"],
+  bock1:  ["I still care about the code — Birgitta Böckeler, Jul 2025", "https://martinfowler.com/articles/exploring-gen-ai/i-still-care-about-the-code.html"],
+  bockctx:["Context Engineering for Coding Agents — Böckeler, Feb 2026", "https://martinfowler.com/articles/exploring-gen-ai/context-engineering-coding-agents.html"],
+  bockharn:["Harness engineering for coding agent users — Böckeler, Apr 2026", "https://martinfowler.com/articles/harness-engineering.html"],
+  bocksens:["Maintainability sensors for coding agents — Böckeler, May 2026", "https://martinfowler.com/articles/sensors-for-coding-agents.html"],
+  bocktdd:["TDD inside the agent loop — theater or actual value? — Böckeler, Aug 2026", "https://martinfowler.com/articles/exploring-gen-ai/tdd-in-the-agent-loop.html"],
+  doern:  ["Assessing internal quality while coding with an agent — Doernenburg, Jan 2026", "https://martinfowler.com/articles/exploring-gen-ai/ccmenu-quality.html"],
+  morris: ["Humans and Agents in Software Engineering Loops — Kief Morris, Mar 2026", "https://martinfowler.com/articles/exploring-gen-ai/humans-and-agents.html"],
+  beck:   ["Augmented Coding: Beyond the Vibes — Kent Beck, Jun 2025", "https://newsletter.kentbeck.com/p/augmented-coding-beyond-the-vibes"],
+  beck26: ["Genie Lessons: Nobody Wants Agents — Kent Beck, Apr 2026", "https://newsletter.kentbeck.com/p/genie-lessons-nobody-wants-agents"],
+  osmani: ["The 70% problem — Addy Osmani, Dec 2024", "https://addyo.substack.com/p/the-70-problem-hard-truths-about"],
+  osmani26:["My LLM coding workflow going into 2026 — Addy Osmani, Dec 2025", "https://medium.com/@addyosmani/my-llm-coding-workflow-going-into-2026-52fe1681325e"],
+  sg80:   ["Agentic coding in 2026 / the 80% problem — Sourcegraph, May 2026", "https://sourcegraph.com/blog/agentic-coding"],
+  ball:   ["How to Build an Agent — Thorsten Ball, Apr 2025", "https://ampcode.com/notes/how-to-build-an-agent"],
+  woolf:  ["An AI agent coding skeptic tries AI agent coding — Max Woolf, Feb 2026", "https://minimaxir.com/2026/02/ai-agent-coding/"],
+  hamel:  ["Your AI Product Needs Evals — Hamel Husain, Mar 2024", "https://hamel.dev/blog/posts/evals/index.html"],
+
+  owasp:  ["OWASP Top 10 for LLM Applications 2026", "https://genai.owasp.org/resource/owasp-genai-llm-top-10-2026/"],
+  owaspag:["OWASP Top 10 for Agentic Applications 2026", "https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/"],
+  nist:   ["NIST AI RMF Generative AI Profile (AI 600-1), Jul 2024", "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.600-1.pdf"],
+  mcpsec: ["MCP Security Best Practices — specification", "https://modelcontextprotocol.io/specification/latest/basic/security_best_practices"],
+  poison: ["MCP Tool Poisoning Attacks — Invariant Labs, Apr 2025", "https://invariantlabs.ai/blog/mcp-security-notification-tool-poisoning-attacks"],
+  s1ng:   ["s1ngularity supply-chain attack — Wiz, Aug 2025", "https://www.wiz.io/blog/s1ngularity-supply-chain-attack"],
+  shai:   ["Shai-Hulud npm worm — Unit 42, Nov 2025", "https://unit42.paloaltonetworks.com/npm-supply-chain-attack/"],
+  miasma: ["Miasma worm: AI coding-agent config injection — SafeDep, Jun 2026", "https://safedep.io/miasma-worm-ai-coding-agent-config-injection/"],
+  camo:   ["CamoLeak: Copilot Chat data exfiltration — Legit Security, Oct 2025", "https://www.legitsecurity.com/blog/camoleak-critical-github-copilot-vulnerability-leaks-private-source-code"],
+  ghmcp:  ["GitHub MCP toxic agent flow — Invariant Labs, May 2025", "https://invariantlabs.ai/blog/mcp-github-vulnerability"],
+  replit: ["Agent deleted a production database — The Register, Jul 2025", "https://www.theregister.com/2025/07/21/replit_saastr_vibe_coding_incident/"],
+  pciai:  ["AI Principles: Securing the Use of AI in Payment Environments — PCI SSC, Sep 2025", "https://blog.pcisecuritystandards.org/ai-principles-securing-the-use-of-ai-in-payment-environments"],
+  pcidoc: ["PCI DSS v4.0.1 — requirement text via the SSC Document Library (registration required)", "https://www.pcisecuritystandards.org/document_library/"],
+  tencentfp:["Reducing False Positives in Static Bug Detection with LLMs — arXiv:2601.18844, Jan 2026", "https://arxiv.org/abs/2601.18844"],
+  aup:    ["Usage Policy — Anthropic", "https://www.anthropic.com/aup"]
+};
+
+/* ---------- The ten rules ---------- */
+const RULES = [
+  ["If you can't verify it, don't ship it.",
+   "Anthropic names \"the trust-then-verify gap\" as a top failure pattern: the agent produces a plausible-looking implementation that doesn't handle edge cases. Every task needs a check — a test, a build exit code, a linter, a screenshot diff.", ["ccbp"]],
+  ["Never merge code nobody has verified — and be deliberate about what verification means.",
+   "Hashimoto's rule still holds: \"I'm not shipping code I don't understand,\" PCI DSS 6.2.3 requires custom software to be reviewed before release, and 6.2.3.1 requires a reviewer other than the author plus management approval — but only where that review is manual; 6.2.3 also permits automated review tools. The policy this guide recommends is stricter: a human non-author reviews every agent-authored diff regardless. What shifted in Aug 2026 is the mechanism: both Willison and Osmani now argue that reading every line does not scale past a few parallel agents, and that the real skill is choosing verification that isn't line-by-line review — tests, a separate verifying agent, a reproduction. Accountability at the merge boundary is non-negotiable; line-by-line reading is one tool for it, not the definition of it.", ["mh","swreview","osmaniloop","pcidoc"]],
+  ["Your sense of speed is not evidence.",
+   "In METR's RCT, experienced maintainers believed AI made them 20% faster on their own repos. Measured, they were 19% slower. A ~39-point error, by experts, on work they'd just finished. Measure outcomes; treat the feeling as satisfaction data, not throughput data.", ["metr","metr26"]],
+  ["Deterministic guardrails beat instructions. Always.",
+   "\"Never edit .env\" in a context file is a request. A PreToolUse hook that blocks the edit is enforcement. 87% of an agent's model calls are agent-initiated — no human is in the loop at the moment of decision, so the prompt is a suggestion and the boundary is the control.", ["ccfeat","msr","dm3"]],
+  ["Small diffs. Frequent commits. Reviewable batches.",
+   "Karpathy: \"I'm always scared to get way too big diffs. I always go in small incremental chunks.\" Böckeler's test for whether a change is reviewable: if you were on call for this app, at what change size would you be comfortable deploying?", ["karpsw","bock1"]],
+  ["Scope the task to finish before context compaction.",
+   "Compaction hits only 7.8% of sessions but consumes 44% of all tokens; the median event drops 73% of prompt tokens and burns ~22% of the turn's time, and cache hit rate falls ~66%. A task that fits in one clean context is faster, cheaper, and more accurate.", ["msr","ctx"]],
+  ["Own what you send.",
+   "40% of desk workers received AI \"workslop\" in a month — polished-looking output that offloads the thinking onto the recipient. ~2 hours to resolve each instance. If you didn't verify it, don't forward it.", ["workslop","betterup"]],
+  ["Two failed corrections means start over, not try again.",
+   "After two corrections on the same issue the context is polluted with failed approaches. Clear it and write a better prompt incorporating what you learned. \"A clean session with a better prompt almost always outperforms a long session with accumulated corrections.\"", ["ccbp"]],
+  ["Never put cardholder data, keys, or credentials in a prompt.",
+   "Prompts and file contents leave the machine regardless of sandboxing — transmission to a third-party service provider (Req 4, Req 12.8). And session transcripts sit in plaintext locally for 30 days by default, so a PAN that reaches a prompt becomes stored PAN somewhere nobody expects it, which is the 12.10.7 discovery that triggers incident response. Two distinct requirements, both live. Synthetic test PANs only.", ["usage","pciai","pcidoc"]],
+  ["Date-stamp every practice you adopt, including these.",
+   "Multiple independent practitioners mark November–December 2025 as a discontinuity in coding-agent capability. A rule written against April 2025 tooling was authored against a materially weaker agent. Re-read your own guidance quarterly; METR's capability doubling time is ~131 days.", ["swinflect","karpseq","karpae","metrth"]]
+];
+
+/* ---------- Practices ---------- */
+/* t: do | dont ; tracks: eng qa pm sec */
+const P = [
+/* ============ SCOPING & DELEGATION ============ */
+{g:"Scoping & delegation", t:"do", tr:["pm","eng"], h:"Delegate bounded, well-trodden work",
+ b:"Good candidates: bug fixes with a repro, test coverage, documentation, accessibility, UI tweaks, technical debt, boilerplate, migrations across many similar files. Karpathy's rule of thumb: models are strong on code that has been written many times before.", s:["ghtasks","karpdw"]},
+{g:"Scoping & delegation", t:"dont", tr:["pm","eng"], h:"Don't delegate the seven high-risk categories",
+ b:"GitHub's published do-not-delegate list is the best intake filter available: broad cross-repository refactors; work requiring understanding of dependencies and legacy code; deep domain knowledge or substantial business logic; production-critical issues; anything touching security, PII, or authentication; ambiguous or open-ended tasks; and — deliberately — tasks where the developer wants to learn.", s:["ghtasks"]},
+{g:"Scoping & delegation", t:"do", tr:["pm","eng"], h:"Protect the learning carve-out",
+ b:"In an RCT of 52 mostly-junior engineers learning an unfamiliar library, the AI-assisted group scored 50% on a comprehension quiz versus 67% for those who hand-coded — nearly two letter grades, p=0.01, with the largest gap on debugging. Juniors ship more and learn less unless you intervene. For unfamiliar tech, require explain-and-interrogate mode rather than generate-and-accept.", s:["skills","ghtasks"]},
+{g:"Scoping & delegation", t:"do", tr:["eng","pm"], h:"Expect the returns to depend on the codebase, not the tool",
+ b:"A 802-developer, 196k-PR longitudinal study found throughput gains \"concentrated in newer repositories and barely present in legacy ones,\" and indistinguishable across the seniority ladder. Route agent effort at new services, modules, scaffolding, and tests. Expect single-digit returns on high-complexity changes in a ten-year-old core.", s:["twoX","dorroi"]},
+{g:"Scoping & delegation", t:"dont", tr:["eng"], h:"Don't build an agent where a workflow will do",
+ b:"Agents trade latency and cost for flexibility. Reach for one only when the work involves nuanced judgment, exceptions, or context-sensitive decisions; rulesets too intricate to encode; or heavy reliance on unstructured data. Simple retrieval, classification, and single-turn tasks are cheaper and more reliable as ordinary software.", s:["oaguide","bea"]},
+{g:"Scoping & delegation", t:"do", tr:["eng"], h:"Start single-agent; split only on demonstrated failure",
+ b:"Maximise one agent's capabilities first. The trigger to split is testable, not aesthetic: the agent fails to follow complicated instructions, consistently selects wrong tools, or your prompt has filled up with conditionals. Some agents succeed with 15+ tools.", s:["oaguide"]},
+{g:"Scoping & delegation", t:"do", tr:["eng"], h:"Reach for multi-agent deliberately, not by default",
+ b:"This is the position that moved most in 2026. Anthropic's Jun 2025 guidance named \"most coding work\" a poor fit for multi-agent; it has since shipped agent teams and published a parallel-agent C compiler build, so parallel coding is now demonstrated rather than discouraged. What survives is the cost: agent teams run about 7× the tokens of a standard session, and the older 15×-versus-chat figure is a different baseline that no longer describes the tooling. Kent Beck's caution still lands — \"multi-agent is a feature; outcome-orientation is the thing the feature is supposed to deliver.\"", s:["cccost","parclaudes","beck26","mars"]},
+
+/* ============ PLANNING & SPECS ============ */
+{g:"Planning & specs", t:"do", tr:["eng","pm"], h:"Separate explore → plan → implement → commit",
+ b:"Letting an agent jump straight to code produces code that solves the wrong problem. Explore read-only first (plan mode), get a written plan, edit the plan directly, then implement against it. Planning is also cost control — it prevents expensive rework when the initial direction is wrong.", s:["ccbp","cccost"]},
+{g:"Planning & specs", t:"dont", tr:["eng"], h:"Don't plan everything",
+ b:"Plan mode adds overhead. The published heuristic is worth memorising: if you could describe the diff in one sentence, skip the plan. Planning pays when you're uncertain about the approach, the change spans files, or you don't know the code.", s:["ccbp","oacodex"]},
+{g:"Planning & specs", t:"do", tr:["pm","eng"], h:"Scale process weight to uncertainty, not task size",
+ b:"Kiro's matrix is the clearest published version: full spec for unfamiliar territory or when requirements need iteration; quick spec for well-understood features; plain chat for typos and one-line fixes. And a rule worth stealing outright — a second failed fix attempt automatically escalates to a written spec.", s:["kirobp"]},
+{g:"Planning & specs", t:"do", tr:["pm"], h:"Write acceptance criteria in EARS form",
+ b:"\"WHEN [condition] THE SYSTEM SHALL [behavior].\" This is the highest-leverage single change a BA can make, because an EARS statement is simultaneously the agent's instruction and the QA test case — it removes the translation step where requirements normally rot. Hold each to three tests: testable, complete (normal flows and edge cases), clear to non-engineers.", s:["kiroreq"]},
+{g:"Planning & specs", t:"do", tr:["pm","eng"], h:"Make the spec self-contained, and state what is out of scope",
+ b:"The most useful specs name the files and interfaces involved, state explicit non-goals, and end with an end-to-end verification step that proves the feature works. Anthropic's line: time spent making the spec precise pays off more than time spent watching the implementation. OpenAI's version: a plan must contain everything a novice needs, because sessions restart and context compacts.", s:["ccbp","oaplans"]},
+{g:"Planning & specs", t:"do", tr:["pm"], h:"Keep the tech stack out of the requirements",
+ b:"Specification is the what and why; planning is the how. Mixing them produces a spec that quietly pre-commits an architecture nobody agreed to, and that non-engineers can no longer review.", s:["speckit","kiroreq"]},
+{g:"Planning & specs", t:"do", tr:["pm"], h:"Insert a clarify gate before planning and a consistency gate before implementing",
+ b:"Both published spec-driven workflows do this: resolve ambiguity before design, then validate consistency and coverage across artifacts before any code is written. Contradictions caught in requirements never become wasted agent turns.", s:["speckit","kirobp"]},
+{g:"Planning & specs", t:"do", tr:["pm","eng"], h:"Let the agent interview you before it writes the spec",
+ b:"Ask it to interview you in detail on technical implementation, UX, edge cases and tradeoffs — digging into the hard parts you might not have considered — then write the spec to a file. Execute it in a fresh session with clean context. This is elicitation support, not decision delegation: the agent surfaces the questions, you answer them.", s:["ccbp"]},
+{g:"Planning & specs", t:"dont", tr:["eng","pm"], h:"Don't ship a prompt with contradictory instructions",
+ b:"Contradictions force the model to waste reasoning tokens reconciling them rather than ignoring one — and OpenAI strengthened this in Jul 2026: \"conflicting rules can create more instability than missing detail.\" Add a contradiction audit to spec and prompt review. Same guidance also says to stop leaning on always/never absolutes and to trim repeated rules and dead examples.", s:["oa56","oa52"]},
+{g:"Planning & specs", t:"do", tr:["eng","pm"], h:"Store specs in the repo, next to the code",
+ b:"Specs that live in a wiki drift. Co-located specs are reviewable in the same PR as the change, and the prompt itself becomes a reviewable artifact — a gap practitioners repeatedly complain that PR tooling doesn't cover.", s:["kirobp","woolf","ronach3"]},
+
+/* ============ CONTEXT ENGINEERING ============ */
+{g:"Context engineering", t:"do", tr:["eng"], h:"Treat context as your scarcest resource",
+ b:"Performance degrades as the window fills — \"context rot.\" The goal is the smallest possible set of high-signal tokens. In production telemetry, conversation history alone accounts for 48% of all input tokens, with a median input:output ratio of 275:1. Context hygiene is not a micro-optimisation.", s:["ctx","msr","bockctx"]},
+{g:"Context engineering", t:"do", tr:["eng"], h:"Understand what compaction actually costs you",
+ b:"When a session fills the context window, the agent summarises the earlier conversation to make room and carries on from the summary. Three things happen, none of them visible. The summarisation itself is expensive, because it has to read everything it condenses. You lose the prompt cache, so the conversation is re-sent at full price — hit rate falls about 66%, and a third of events wipe over 90% of it. And detail goes oldest-first: the median event drops 73% of prompt tokens, which means the instructions you gave at the start are the first to vanish. The number that reframes it: compaction touches only 7.8% of sessions but consumes 44% of all tokens, so the sessions that compact dominate your entire spend.", s:["msr","ccbp","ctx"]},
+{g:"Context engineering", t:"do", tr:["eng"], h:"Keep the project context file short, and prune it ruthlessly",
+ b:"Apply one test to every line: \"would removing this cause the agent to make mistakes?\" If not, cut it — bloated context files cause the agent to ignore your actual instructions. Our own convention is a ~200-line ceiling; the docs give the test, not the number. Diagnostic: if the agent keeps doing something you have a rule against, the file is probably too long and the rule is getting lost in the noise.", s:["ccbp","ccfeat"]},
+{g:"Context engineering", t:"dont", tr:["eng"], h:"Don't expect the context file to be the magic lever",
+ b:"The only controlled study — 438 tasks, four agent configurations — found developer-written files improve success just 2.4% on average (p=0.21, not significant). Three things it did establish. Hand-written files significantly beat agent-generated ones (p=3.8%), so never let an agent write its own; generated files add roughly 20–23% inference cost (p<0.001); and agents genuinely do follow specific instructions — a tool named in the file gets used 1.6 times per task versus under 0.01 times when it isn't mentioned. What fails is the part everyone writes first: \"Context files are not effective at providing a repository overview.\" Put in commands, conventions and gotchas the agent cannot infer. Leave out the architectural tour.", s:["agentsmdpaper"]},
+{g:"Context engineering", t:"do", tr:["eng"], h:"Standardise on AGENTS.md, nearest-file-wins",
+ b:"One open format, 60+ agents, 60k+ projects, and explicit support from GitHub, OpenAI, Google and Anthropic tooling. Keep it separate from the README: build and test commands, conventions, security considerations, commit and PR rules. In a monorepo, one per package.", s:["agentsmd"]},
+{g:"Context engineering", t:"do", tr:["eng"], h:"Match the mechanism to the trigger",
+ b:"Wrong twice on a convention → context file. Same prompt typed repeatedly → a skill. Pasting the same playbook a third time → a skill. Copying from a browser tab the agent can't see → an MCP server. A side task flooding your session → a subagent. Must happen every time → a hook.", s:["ccfeat","bockctx"]},
+{g:"Context engineering", t:"do", tr:["eng"], h:"Clear between unrelated tasks; compact with instructions",
+ b:"The \"kitchen sink session\" — one task, then something unrelated, then back — is a named failure pattern. Clearing costs nothing; compacting is itself a large request because it reads the conversation it summarises. Prefer targeted compaction at milestones over compaction every turn.", s:["ccbp","cccost","msr"]},
+{g:"Context engineering", t:"do", tr:["eng"], h:"Delegate verbose investigation to subagents",
+ b:"Subagents run in separate context windows and report back a condensed summary — typically 1–2k tokens instead of the dozens of files they read. Use them when output is verbose and unneeded downstream, when you want tool restrictions, or when the work is self-contained.", s:["ccbp","ccsub","ctx"]},
+{g:"Context engineering", t:"dont", tr:["eng"], h:"Don't use a subagent for iterative or shared-context work",
+ b:"Avoid them when the task needs frequent back-and-forth, when planning/implementation/testing share significant context, for quick targeted changes, or when latency matters. Ronacher tried subagents and put them in his \"didn't work\" post — fine for investigation, problematic for mixed read/write.", s:["ccsub","ronach2"]},
+{g:"Context engineering", t:"do", tr:["eng"], h:"Prefer CLI tools over MCP servers where both exist",
+ b:"CLI tools add no per-tool listing cost to every request. Keep fewer than 20 tools live per turn and defer the long tail behind tool search. If a human engineer can't say definitively which of two tools applies, neither can the agent.", s:["ccbp","oafn","ctx"]},
+{g:"Context engineering", t:"do", tr:["eng"], h:"Filter high-volume output before it reaches the model",
+ b:"Instead of the agent reading a 10,000-line log to find errors, have a hook grep for ERROR and return the matches — tens of thousands of tokens down to hundreds. Same principle for test output: show failures only.", s:["cccost"]},
+
+/* ============ PROMPTING & MODEL CHOICE ============ */
+{g:"Prompting & model choice", t:"dont", tr:["eng","pm","qa"], h:"Stop telling reasoning models to \"think step by step\"",
+ b:"Two labs independently say the same thing. OpenAI: the models reason internally, so chain-of-thought prompting is unnecessary and complex prompt engineering \"may hinder performance.\" Google, still verbatim in the Gemini 3.5 guidance: be concise, because \"verbose or complex prompt engineering techniques designed for older models may cause the model to over-analyze.\" This is the most common anti-pattern in teams migrating from pre-reasoning models — and OpenAI's Jul 2026 guidance goes further, telling you to start from the smallest prompt that preserves the contract rather than porting an old one.", s:["oareas","gem35","oa56"]},
+{g:"Prompting & model choice", t:"do", tr:["eng","qa","pm"], h:"Be specific about the symptom, the source, and the pattern to follow",
+ b:"\"Fix the login bug\" → \"users report login fails after session timeout; check the auth flow in src/auth/, especially token refresh; write a failing test that reproduces it, then fix it.\" \"Add tests for foo.py\" → \"write a test covering the logged-out edge case; avoid mocks.\" \"The build is failing\" → \"...address the root cause, don't suppress the error.\"", s:["ccbp"]},
+{g:"Prompting & model choice", t:"dont", tr:["eng"], h:"Don't over-dictate either",
+ b:"Delegate, don't dictate: give context and direction, then let the agent figure out which files to read and which commands to run. And keep vague prompts deliberately in your toolkit — \"what would you improve in this file?\" surfaces things you wouldn't have thought to ask.", s:["ccwork","ccbp"]},
+{g:"Prompting & model choice", t:"do", tr:["eng"], h:"Baseline with the most capable model, then downgrade with evals as proof",
+ b:"Start with the strongest model to establish what's achievable, then substitute cheaper models where evals show you can. Starting small means you can't tell a capability ceiling from a prompt bug. And change reasoning effort and prompt separately — OpenAI's current guidance is to hold your effort setting as the baseline, then test that setting and one level lower.", s:["oaguide","oa56"]},
+{g:"Prompting & model choice", t:"dont", tr:["eng"], h:"Don't switch models mid-session",
+ b:"Production telemetry: switching models mid-session collapses cache hit rate to 8%, a 67-point drop. Purely mechanical, widely unknown, and expensive. Pin a model per session.", s:["msr"]},
+{g:"Prompting & model choice", t:"do", tr:["eng"], h:"Set reasoning effort by task class",
+ b:"Low for retrieval, triage and classification. Medium for comparison and design discussion. High for advanced coding, math and multi-step planning. Thinking tokens are billed as output and the default budget can be tens of thousands of tokens per request, so this is a cost lever as much as a quality one.", s:["gem35","gemthink","cccost"]},
+{g:"Prompting & model choice", t:"dont", tr:["eng"], h:"Don't drop temperature to chase determinism",
+ b:"Counterintuitive and commonly violated. Google's current guidance is to leave the parameter unset entirely — reasoning is tuned for the defaults, and lowering temperature was documented on the Gemini 3 page as risking \"looping or degraded performance.\" Determinism comes from the harness, not the sampler.", s:["gem35","gem3"]},
+{g:"Prompting & model choice", t:"do", tr:["eng","pm"], h:"Prefer tool lookups over model memory for any specific fact",
+ b:"Names, numbers, prices, dates, IDs, URLs, document titles — these are the highest-rate hallucination categories. Route them through a retrieval tool, and when extracting structured data, set absent fields to null rather than guessing. Note the vintage: this was explicit in OpenAI's Dec 2025 guide and is not restated in the Jul 2026 successor, which covers tool use as programmatic tool calling instead. The practice still holds for our purposes; it is no longer vendor-endorsed text.", s:["oa52","oa56"]},
+
+/* ============ VERIFICATION & TESTING ============ */
+{g:"Verification & testing", t:"do", tr:["eng","qa"], h:"Give every task a check the agent can run itself",
+ b:"Without one, \"looks done\" is the only available signal and you become the verification loop — every mistake waits for you to notice it. A test suite, a build exit code, a linter, a script that diffs output against a fixture, or a screenshot compared to a design all qualify.", s:["ccbp"]},
+{g:"Verification & testing", t:"do", tr:["qa","eng"], h:"Escalate the gate to match how unattended the run is",
+ b:"Four rungs, each trading setup effort for reclaimed attention: (1) ask for the check in the prompt; (2) set it as a session goal re-evaluated every turn; (3) a Stop hook that blocks the turn from ending until the check passes — deterministic, though it yields after 8 consecutive blocks; (4) a verification subagent, so the agent doing the work isn't the one grading it.", s:["ccbp","cchook"]},
+{g:"Verification & testing", t:"do", tr:["qa","eng"], h:"Demand evidence, not assertions of success",
+ b:"Require the test output, the command run and what it returned, or a screenshot. Reviewing evidence is faster than re-running the verification yourself, and it works for sessions you weren't watching. This is the reviewable artifact for an agent PR.", s:["ccbp"]},
+{g:"Verification & testing", t:"do", tr:["qa"], h:"Make test files read-only to the implementing agent",
+ b:"If an agent can write to your test suite, it will sometimes fix the test rather than the code — and you will merge it, because a green build looks like a green build. ImpossibleBench measured this cleanly by building tasks where passing necessarily requires a spec-violating shortcut, so any pass proves cheating: Claude-family models took that shortcut by editing the test file in over 79% of cases. Read-only test access \"restores legitimate performance while preventing test modification attempts.\" Read the rates as propensity under pressure, not your Tuesday afternoon — the setup was engineered to force the behaviour — but the mitigation costs nothing.", s:["impossible"]},
+{g:"Verification & testing", t:"dont", tr:["qa","eng"], h:"Don't rely on \"don't modify the tests\" in the prompt",
+ b:"The benchmark's definition of the primary cheating strategy is literally \"the model directly modifies tests despite being explicitly instructed not to.\" The strictest prompting plus an explicit abort option moved one model from 54% to 9% — better, not zero. Prompting narrows the gap; permissions close it.", s:["impossible","ccfeat"]},
+{g:"Verification & testing", t:"dont", tr:["qa"], h:"Don't give the agent unlimited resubmission against the suite",
+ b:"More attempts against a gameable oracle means more chances to find the shortcut — measured cheating rose from 33% to 38% when multiple submissions were allowed. Cap retries; a repeatedly-failing task is a signal to escalate to a human, not to keep rolling dice.", s:["impossible","oaguide"]},
+{g:"Verification & testing", t:"do", tr:["qa","eng"], h:"Separate the agent that writes tests from the agent that writes code",
+ b:"One session writes tests, another writes the implementation to pass them. A fresh context also improves review, because the reviewing model isn't biased toward code it just wrote. This is the human TDD discipline enforced by process rather than by trust.", s:["ccbp","impossible"]},
+{g:"Verification & testing", t:"dont", tr:["qa","eng"], h:"Don't treat coverage as test quality",
+ b:"Böckeler documented 100% statement coverage masking unmaintainable code with no real unit tests, because acceptance tests executed the lines without verifying their impact. Watch for the specific agent failure modes: tautological tests that assert the implementation against itself, mocked-away assertions, and skipped \"red\" steps.", s:["bocksens","bocktdd"]},
+{g:"Verification & testing", t:"do", tr:["qa"], h:"Use mutation testing to compare configurations — not as a PR gate",
+ b:"Mutation score is the direct antidote to the mocked-away assertion: a test with no real assertion kills no mutants. But a 2026 replicability study across 101k LLM-generated test cases found coverage and mutation are reliable signals only when the code under test can be assumed correct. On a PR whose code may itself be buggy, they are not reliable fault-detection indicators.", s:["bocksens","mutation"]},
+{g:"Verification & testing", t:"do", tr:["qa","eng"], h:"Have the agent actually execute what it wrote, and document what it tested",
+ b:"Never assume generated code works until it has been run. Drive a dev server with curl for APIs, a headless browser for UI, one-liners for edge cases — and make the agent record what it exercised rather than speculate. \"It compiles\" is not evidence.", s:["swmanual","oaplans"]},
+{g:"Verification & testing", t:"do", tr:["qa","eng"], h:"Treat the TDD-in-the-loop question as genuinely open",
+ b:"Consensus: tests must exist and must be executed. Contested: instructing the agent to write tests first. Willison calls red/green TDD a \"fantastic fit\" (Mar 2026). Böckeler's Aug 2026 run experiment found no discernible quality difference, sometimes better design without it, at 3× the tokens — because test-first instructions work against the up-front design step agents benefit from. She has stopped mandating it. Prescribe the outcome; let the team choose the process.", s:["swtdd","bocktdd"]},
+{g:"Verification & testing", t:"do", tr:["qa"], h:"Fix your build and test entrypoints before you tune prompts",
+ b:"In production telemetry, tool failures occur in 9% of turns and trigger retry loops that amplify compute up to 4×. Execution tools (build, run command) succeed only ~73% versus near-100% for reads. A failed terminal invocation takes 48× longer at P95, and failed builds return 7–8× more tokens. Fail fast, fail small: cap timeouts, truncate error output.", s:["msr"]},
+
+/* ============ EVALS ============ */
+{g:"Evals", t:"do", tr:["qa","eng"], h:"Start with 20–50 tasks drawn from real failures",
+ b:"Source them from the bug tracker and support queue — start with what you already test manually. Waiting for a \"complete\" suite means shipping unmeasured. Mirror your real task distribution and deliberately include edge cases.", s:["evals","tests"]},
+{g:"Evals", t:"do", tr:["qa"], h:"Pick the cheapest grader that is still reliable: code, then model, then human",
+ b:"Code graders are fast, cheap, objective and reproducible but brittle to valid variations. Model graders are flexible and capture nuance but are non-deterministic and cost more. Human grading is highest quality and slowest — avoid where possible. Also counterintuitive: prefer many auto-graded cases over few hand-graded ones.", s:["tests","evals"]},
+{g:"Evals", t:"do", tr:["qa"], h:"Grade the outcome, not the path",
+ b:"Over-specified trajectories produce brittle tests that fail on valid alternative strategies. Grade the final state. (The exception is agent tool-use evaluation, where the trajectory is the thing being measured — there, exact-match the tool sequence and stay fuzzy on prose.)", s:["evals","adkeval"]},
+{g:"Evals", t:"dont", tr:["qa"], h:"Don't read a 0% pass rate as an incapable agent",
+ b:"\"A 0% pass rate across many trials is most often a signal of a broken task, not an incapable agent.\" Write a reference solution proving each task is solvable before you trust its score. This is the agentic-era equivalent of flaky-test triage.", s:["evals"]},
+{g:"Evals", t:"dont", tr:["qa"], h:"Don't trust an eval score you haven't read transcripts behind",
+ b:"Anthropic's stated internal policy is not to take eval scores at face value until someone has read some transcripts. Husain independently: \"You are doing it wrong if you aren't looking at lots of data.\" Remove the friction — build a trace viewer.", s:["evals","hamel"]},
+{g:"Evals", t:"dont", tr:["qa"], h:"Don't treat an LLM judge as ground truth",
+ b:"The judge needs its own eval. Validate agreement against human labels before trusting it, control for its bias toward longer outputs, and prefer pass/fail or pairwise over fine-grained numeric scales. Don't report raw agreement as judge quality — with imbalanced classes, a judge that always says \"pass\" scores 95%.", s:["oaeval","hamel","tests"]},
+{g:"Evals", t:"do", tr:["qa"], h:"Retire saturated evals",
+ b:"Once pass rates exceed 80–90%, capability signal diminishes and continuing to tune against the suite is definitionally overfitting. Keep the suite growing from production traces; a frozen suite is a target, a growing one is a moving one.", s:["evals","oaeval"]},
+{g:"Evals", t:"do", tr:["qa"], h:"Wire evals into CI as a gate with a numeric threshold",
+ b:"A failing exit code is what turns an eval from a dashboard into a gate. Google's ADK ships a conformance command that fails the build; Microsoft's guidance is to set an acceptance threshold — their published example is 85% task adherence — before release. Pick your own number, but pick one.", s:["adkeval","msfoundry"]},
+{g:"Evals", t:"dont", tr:["qa"], h:"Don't write one-sided evals",
+ b:"Test both when a behaviour should occur and when it shouldn't. A suite made only of positive cases can be satisfied by a system that always says yes. Also reason explicitly about which error direction is worse — that answer determines how your evals are weighted.", s:["evals","pair"]},
+{g:"Evals", t:"do", tr:["qa","eng"], h:"Measure chained workflows, not isolated steps",
+ b:"On serial dependency-chained tasks, completion collapsed from 100% at the first stage to 20% at the final stage across 15 mainstream models, with no model finishing the pipeline — degradation the authors describe as \"largely invisible to conventional isolated benchmarks.\" A 90% per-step success rate is a 35% success rate over ten steps.", s:["ramp"]},
+{g:"Evals", t:"dont", tr:["qa","eng","pm"], h:"Don't plan capacity from a public benchmark score",
+ b:"OpenAI retired SWE-bench Verified after auditing 138 consistently-failed problems and finding 59.4% had material issues in test design and/or the problem description — and demonstrated contamination — frontier models reproduced the human gold patch, in one case quoting an inline comment verbatim. Run your own eval on 20–50 real historical tickets from your repos instead.", s:["oaswe"]},
+
+/* ============ REVIEW & MERGE ============ */
+{g:"Review & merge", t:"do", tr:["eng","qa"], h:"Budget review capacity before you budget seats",
+ b:"When throughput doubled in the 802-developer study, per-reviewer load roughly doubled, bots became ~38% of review events, and review latency became the binding constraint — hence the paper's title, \"AI Writes Faster Than Humans Can Review.\" DORA calls it the verification tax. Generation capacity without verification capacity is a queue, not a speedup — and by mid-2026 the practitioner answer to that queue is not more reviewers but different verification.", s:["twoX","dorroi","swreview"]},
+{g:"Review & merge", t:"do", tr:["eng","qa"], h:"Cap parallelism at what you can actually verify",
+ b:"The 2025 version of this rule was throughput-bound: Willison, \"I can only focus on reviewing and landing one significant change at a time\"; Hashimoto's phase-offset, \"if I'm coding, I want an agent planning.\" By Aug 2026 both Willison and Osmani had moved — Osmani reports running 5–10 parallel agents daily, with the hard rule that the drafting agent is never the verifying agent. The bound didn't disappear, it moved: cap parallelism at your <em>verification</em> capacity, and invest in verification that isn't your own eyes. Median human idle between turns in production is still 25 minutes.", s:["swreview","osmaniloop","swpar","mh26","msr"]},
+{g:"Review & merge", t:"do", tr:["eng","qa"], h:"Add an adversarial review pass against the plan",
+ b:"A reviewer in a fresh context sees only the diff and the criteria — not the reasoning that produced the change — so it evaluates on the result's own terms. Prompt it to check that every requirement is implemented, listed edge cases have tests, and nothing outside scope changed. Report gaps, not style preferences.", s:["ccbp","ccteam"]},
+{g:"Review & merge", t:"dont", tr:["eng","qa"], h:"Don't chase every finding an AI reviewer reports",
+ b:"A reviewer prompted to find gaps will report some even when the work is sound, because that's what it was asked to do. Chasing all of them produces over-engineering: extra abstraction, defensive code, tests for cases that can't happen. Tell it to flag only what affects correctness or the stated requirements.", s:["ccbp"]},
+{g:"Review & merge", t:"do", tr:["qa","eng"], h:"Deploy AI review as an additional reviewer, not a replacement",
+ b:"On a benchmark of 184 real PRs with executable tests derived from human review comments, individual agents passed 20–32% of tests — but all tools combined reached 41.5%, and 84% of sampled comments were rated useful by humans. AI review finds different bugs than humans, not fewer-but-similar ones. A separate industrial study — 433 real alarms from Tencent's in-house static analyzer, not code review — found hybrid LLM-plus-static-analysis triage removed 94–98% of false positives while keeping high recall, which makes alarm triage a strong second use for the same models.", s:["crab","tencentfp"]},
+{g:"Review & merge", t:"do", tr:["eng","qa"], h:"Actively strip the model's characteristic defects in review",
+ b:"Three independent practitioners describe the same defect signature a year apart: over-defensive try/catch sprawl, unnecessary abstraction and complexity, local rather than system-level reasoning, and deprecated APIs. Doernenburg's measured version: \"the AI agents seem to have a strong tendency to introduce technical debt.\" Put \"remove the defensive cruft\" on the checklist.", s:["karpdw","ronach3","doern"]},
+{g:"Review & merge", t:"do", tr:["eng","qa"], h:"Look hardest at what the agent could not see",
+ b:"The \"80% problem\": agents reliably do the visible 80% of a task and miss the invisible 20% that lives outside their context window — cross-cutting changes, hidden middleware, audit logging, cross-repo integration tests. A model can only reason about code it can see; if it found three relevant files, it planned for three files.", s:["sg80","osmani"]},
+{g:"Review & merge", t:"do", tr:["eng"], h:"Shift your effort from inspecting output to improving the harness",
+ b:"Morris's three postures: humans outside the loop (vibe coding), in the loop (inspect everything — creates a review bottleneck because agents outrun reviewers), and on the loop — his recommendation: \"Rather than personally inspecting what the agents produce, we can make them better at producing it.\" A good harness doesn't eliminate human input; it directs it where it matters most.", s:["morris","bockharn"]},
+{g:"Review & merge", t:"do", tr:["eng"], h:"Treat agent friction as a harness bug",
+ b:"When the agent struggles, treat it as a signal and ask what's missing — a tool, a guardrail, documentation, a faster test loop. Then fold the answer back into your agent instructions. Realism check: the reference team in Böckeler's write-up invested about five months in their harness.", s:["bockharn","swcheap"]},
+{g:"Review & merge", t:"do", tr:["qa","eng"], h:"Require every agent TODO be reconciled before review",
+ b:"Done, Blocked, or Cancelled — nothing silently abandoned. Cheap to automate, and it closes the most common gap between \"the agent said it finished\" and \"the work is finished.\" Note that the related one-feature-per-session rule has been retired: Anthropic removed that scaffolding in Mar 2026 because current models handle the decomposition natively. Verification moved earlier instead — agree what \"done\" means before code is written.", s:["oacodex","harn26"]},
+
+/* ============ GUARDRAILS & SECURITY ============ */
+{g:"Guardrails & security", t:"dont", tr:["sec","eng"], h:"Never combine private data, untrusted content, and external communication",
+ b:"The lethal trifecta. An agent with all three can be made to exfiltrate, and this is not solved — Willison: \"we still don't know how to 100% reliably prevent this,\" and on guardrail products, \"95% is very much a failing grade.\" Break one leg. Normally that's egress: default-deny with an allowlist that excludes anything attacker-writable.", s:["trifecta","ciso"]},
+{g:"Guardrails & security", t:"do", tr:["sec","eng"], h:"Enforce the constraint inside the tool, not in the prompt",
+ b:"Google's ADK states it plainly: build tools that expose the actions you want and nothing else, and validate model-generated parameters against context restrictions — SELECT-only, this table only. Don't ask the model not to do X; build a tool that cannot do X. Deterministic enforcement inside the tool cannot be prompt-injected away.", s:["adksafe","oaguard"]},
+{g:"Guardrails & security", t:"dont", tr:["sec"], h:"Don't mistake an approval prompt for a control",
+ b:"Anthropic's own telemetry: users approved roughly 93% of permission prompts — \"the more approvals a user sees, the less attention they pay to each.\" This is OWASP's human-agent trust exploitation with a number attached. Controls must be deny rules and sandbox boundaries that never ask. Reserve prompts for genuinely novel actions.", s:["contain","owaspag"]},
+{g:"Guardrails & security", t:"do", tr:["sec","eng"], h:"Separate read authority from write authority",
+ b:"DeepMind's rule: if an agent summarises patient data, it should not have authority to alter that data. Their three principles for agent deployment are well-defined human controllers, limited powers, and observable actions and planning — observability elevated to a safety requirement, not an ops nicety.", s:["dm3","mscaf"]},
+{g:"Guardrails & security", t:"dont", tr:["sec","eng"], h:"Never give an agent write access to a production payments datastore",
+ b:"Not \"with approval\" — not at all. Agents get read replicas or synthetic fixtures. In the documented Replit incident the agent deleted a production database despite an explicit code freeze, fabricated ~4,000 records, and then wrongly told the user rollback was impossible. A code freeze is enforced by branch protection and CI gates, not by instructing the agent.", s:["replit","pciai"]},
+{g:"Guardrails & security", t:"dont", tr:["sec","eng"], h:"Don't trust the agent's own account of what it did",
+ b:"Same incident: the agent reported that rollback wasn't supported. It was. Verify recoverability out-of-band. NIST's generative-AI profile files this under confabulation, and it is why remote side effects need a permission boundary rather than a post-hoc apology.", s:["replit","nist","ccchk"]},
+{g:"Guardrails & security", t:"do", tr:["sec","eng"], h:"Treat agent config files as executable code",
+ b:"Agent tooling auto-executes configuration on lifecycle events you never think of as running anything: session-start hooks fire when you open a session, always-apply rule files inject on every request, and a VS Code task set to runOn folderOpen executes when you open the folder. So a hostile repository needs no install and no build — cloning it and opening it is enough. Two 2026 campaigns used exactly this: Miasma pushed a 4.3 MB dropper through those paths across 123+ repositories including one with 1,718 stars, and an npm campaign shipped a settings file whose session-start hook re-ran its binary every session. These files evade review because they look like configuration rather than code. Diff every agent config, rules file, hook and MCP manifest, and open untrusted repos only in a disposable VM.", s:["miasma","s1ng"]},
+{g:"Guardrails & security", t:"dont", tr:["sec","eng"], h:"Never run permission-bypass flags on a credentialed host or in CI",
+ b:"These flags are now a documented attacker primitive, not just a footgun: the s1ngularity npm compromise explicitly invoked developers' own AI CLIs with skip-permission and trust-all-tools flags to enumerate and steal filesystem contents — 1,000+ GitHub tokens, ~20,000 files. Bypass mode also defeats plan mode and propagates to teammates in shared sessions.", s:["s1ng","ccperm"]},
+{g:"Guardrails & security", t:"do", tr:["sec","eng"], h:"Sandbox at the OS level — deny rules alone are not enough",
+ b:"Tool-layer deny rules cover the agent's own file tools and recognised shell commands, but not arbitrary subprocesses — a Python script that opens a file itself is not covered. For enforcement across all processes you need the sandbox. Isolate both filesystem and network: without network isolation a compromised agent exfiltrates keys; without filesystem isolation it backdoors its way to the network.", s:["ccsand","ccsandenv","swsand"]},
+{g:"Guardrails & security", t:"do", tr:["sec","eng"], h:"Open untrusted repositories only in a disposable VM",
+ b:"Willison's framing: \"Use someone else's computer — that way if your agent goes rogue, there's only so much damage they can do.\" The best sandboxes are the ones that run on someone else's machine. And if a credential can spend money, set a tight budget limit.", s:["swloops","swsand","ccsandenv"]},
+{g:"Guardrails & security", t:"dont", tr:["sec","eng"], h:"Never let agent output auto-post to a public surface",
+ b:"Three documented exfiltration chains all ran through this: a public issue coercing an agent into reading a private repo and publishing it in a PR; injection hidden in a PR description exfiltrating source through the image proxy (CVSS 9.6); and a public issue extracting private repo contents into a public comment. Human gate on PR comments, issue replies, and status checks.", s:["ghmcp","camo","ghrisk"]},
+{g:"Guardrails & security", t:"do", tr:["sec","eng"], h:"Pin MCP servers by digest and allowlist them centrally",
+ b:"Malicious instructions can hide in tool descriptions the model reads but your confirmation dialog doesn't display — including rug pulls, where the description mutates after approval. Anthropic reviews connectors against listing criteria but explicitly does not security-audit any MCP server. Org registry only; a description change re-enters review.", s:["poison","mcpsec","ccsec"]},
+{g:"Guardrails & security", t:"do", tr:["sec","eng"], h:"Let agents propose dependencies; require a human to merge them",
+ b:"The risk shrank but did not go away: a 2025 baseline found 19.7% of generated package references did not exist, and a 2026 re-run on current frontier models puts the range at 4.6–6.1%. Still meaningful at scale, and 43% of hallucinated names recurred across all ten repeated queries in the original study — stable, predictable, and therefore squattable. An agent that pulls a package unnoticed also breaks your software inventory (PCI DSS 6.3.2). Regenerate the SBOM as a CI gate; disable install scripts in CI where feasible.", s:["pkg26","slop","shai","pcidoc"]},
+{g:"Guardrails & security", t:"do", tr:["sec"], h:"Enforce policy through managed settings, not a README",
+ b:"Deny rules block in every mode including bypass; allow rules don't. Push the configuration centrally so it can't be overridden by project or user settings, restrict which MCP servers can load, disable bypass and feedback channels, and audit config drift with change hooks. A boundary you state in conversation is honoured until compaction removes the message that stated it.", s:["ccperm","ccsec","kiroperm"]},
+{g:"Guardrails & security", t:"do", tr:["sec"], h:"Never let the agent auto-approve changes to its own control plane",
+ b:"Kiro hardcodes this: writes to its own settings directories are always denied, and writes to .git, agent definitions, hooks and ignore files always ask. Self-modification of the control plane is the one thing that must never be auto-approved. Carry this requirement into anything you build or buy.", s:["kiroperm"]},
+{g:"Guardrails & security", t:"do", tr:["sec","eng"], h:"Escape model-generated content before rendering it",
+ b:"A frequently-missed frontend requirement: prompt injection can make an agent emit HTML or JS that then executes in your users' browsers. Google's ADK guidance is unambiguous — always escape model-generated content in UIs. Put it on the PR checklist.", s:["adksafe"]},
+{g:"Guardrails & security", t:"do", tr:["sec"], h:"Inventory your agents, and decide the kill switch in advance",
+ b:"You can't govern agents you don't know exist. Track ownership, purpose, platform and access scope; give each a distinct identity so actions are attributable; name a human accountable for approving deployments; route agent telemetry to the SOC. A kill switch designed after the incident is not a kill switch — test it.", s:["mscaf","ciso"]},
+{g:"Guardrails & security", t:"dont", tr:["sec","eng"], h:"Don't treat model-layer resistance as a control",
+ b:"Against an adaptive attacker given 100 attempts per environment, a frontier model reached roughly a 1% attack success rate — and Anthropic's own comment is that 1% \"still represents meaningful risk.\" DeepMind: neither traditional software controls nor AI-based controls are sufficient alone. In PCI scope the compensating control must be deterministic.", s:["pinj","dm3"]},
+{g:"Guardrails & security", t:"do", tr:["sec"], h:"Know what PCI actually says — and doesn't",
+ b:"The Council has published AI Principles for payment environments (Sep 2025): AI should not be trusted with high-impact secrets, given agency over operations requiring formal acceptance of responsibility, used to generate security-sensitive random or secret values, or given full agency over creation and deployment without human oversight — and should be treated as a potential insider threat in security exercises. There is no PCI standard specific to coding agents. Existing requirements apply unchanged.", s:["pciai","pcidoc"]},
+{g:"Guardrails & security", t:"do", tr:["sec"], h:"Put the AI rules into the annual secure-development training",
+ b:"PCI DSS 6.2.2 requires development personnel to be trained at least annually on software security relevant to their job function. Prompt injection, the lethal trifecta, agent config-file risk and the credential rules now belong in that curriculum — which makes this guide a compliance artifact, not just an enablement one.", s:["pcidoc","pciai"]},
+{g:"Guardrails & security", t:"do", tr:["sec"], h:"Turn on zero data retention; turn off feedback channels",
+ b:"Under commercial terms, prompts aren't used for training, but standard retention is 30 days and local transcripts sit in plaintext for 30 days by default. Feedback and transcript-sharing commands upload conversation content including code, retained far longer. Get ZDR confirmed in writing as a third-party-service-provider artifact, disable the feedback commands org-wide, and bring the local transcript directory into DLP scope.", s:["usage","pcidoc"]},
+
+/* ============ CI & AUTOMATION ============ */
+{g:"CI & automation", t:"do", tr:["eng","qa"], h:"Run agents in CI non-interactively with an explicit tool allowlist",
+ b:"Restrict what the agent can do when nobody is watching, branch on the exit code, and parse structured output rather than scraping text. Watch the permission-pattern gotcha: the space before the wildcard matters, or a prefix rule matches more than you intended.", s:["cchead","ccbp"]},
+{g:"CI & automation", t:"do", tr:["eng","qa"], h:"Use bare mode in CI, and know what it turns off",
+ b:"Bare mode gives you the same result on every machine because it never reads a teammate's personal hooks or a project's MCP config. That second part is a security property: without it, a non-interactive run executes a project's hooks and connects its MCP servers in a folder you've never trusted, because there's no trust prompt to show.", s:["cchead"]},
+{g:"CI & automation", t:"do", tr:["qa","eng"], h:"Fail the build when a plugin or MCP server silently didn't load",
+ b:"A quietly-degraded agent produces quietly-degraded output. Startup errors are exposed as fields that a CI gate can check, but invalid config entries are skipped and the run continues and exits cleanly. If your runner captures stderr, the field is your only signal.", s:["cchead"]},
+{g:"CI & automation", t:"dont", tr:["eng","qa"], h:"Don't let the default CI token silence your pipeline on agent commits",
+ b:"GitHub doesn't trigger workflows on commits made with the default token. Pass it to your agent action and your CI will not run on the agent's commits — meaning agent code merges ungated. Authenticate as the app or use a custom token. Equally: keep the \"approve and run workflows\" gate on, or an agent's PR executes code in a trusted environment before a human reads it.", s:["ccgha","ghrisk"]},
+{g:"CI & automation", t:"do", tr:["eng"], h:"Pilot a fan-out on two or three files before running it on 300",
+ b:"Generate the task list, run the loop over a handful, refine the prompt based on what goes wrong, then run the full set. And if a workflow bounds coverage — top-N, no retries, sampling — log what was dropped. Silent truncation reads as \"covered everything.\"", s:["ccbp"]},
+{g:"CI & automation", t:"do", tr:["eng"], h:"Write scheduled and unattended prompts as complete specs",
+ b:"An autonomous run can't ask clarifying questions. State the trigger, the scope, the output destination and the stopping condition. Include a maximum iteration count — stopping conditions are how you keep control of a loop.", s:["ccbp","bea"]},
+{g:"CI & automation", t:"do", tr:["eng"], h:"Isolate parallel work in separate checkouts",
+ b:"Git worktrees mean edits in one session never touch files in another. Two agents editing the same file leads to overwrites — break work so each owns a distinct set of files. Checkpoints are not version control: shell-command changes, most subagent edits, and anything touching a remote system can't be rewound.", s:["ccwt","ccteam","ccchk"]},
+{g:"CI & automation", t:"do", tr:["eng"], h:"Trace everything, and turn traces into your eval set",
+ b:"Leave tracing on by default and give traces descriptive, searchable names — generic ones make incident forensics impossible. Traces are the raw material for both your eval dataset and your production monitoring. Under zero data retention, stream them to internal systems rather than going blind.", s:["oagov","msfoundry"]},
+
+/* ============ PRODUCT, RESEARCH & WRITING ============ */
+{g:"Product, research & writing", t:"do", tr:["pm"], h:"Give the model explicit permission to say \"I don't know\"",
+ b:"Anthropic lists this first among hallucination reducers, and it \"can drastically reduce false information.\" For a requirements summary drawn from stakeholder interviews, a flagged gap is useful and a confident fabrication is actively harmful.", s:["halluc"]},
+{g:"Product, research & writing", t:"do", tr:["pm"], h:"Require citations — then require retraction of anything uncited",
+ b:"Have it cite quotes and sources for each claim, then verify each claim by finding a supporting quote; if it can't find one, it must retract the claim. This is the single most valuable technique for a PRD or competitive analysis, because it makes the artifact reviewable by someone who wasn't in the loop.", s:["halluc"]},
+{g:"Product, research & writing", t:"do", tr:["pm"], h:"Ground long-document work in verbatim extraction first",
+ b:"For documents over ~20k tokens, ask for word-for-word quotes before doing the actual task. And say explicitly when you mean only the provided documents — otherwise a summary of your research quietly blends in the model's priors about your industry.", s:["halluc"]},
+{g:"Product, research & writing", t:"do", tr:["pm"], h:"Structure research asks around 2–5 outcomes, not micro-steps",
+ b:"Define a few milestone outcomes, ask it to persist end-to-end rather than stopping at analysis, and require short progress updates that each state one concrete outcome. Don't narrate routine tool calls — narration noise destroys your ability to spot the one update that matters. From OpenAI's Dec 2025 guide; not contradicted since, but not restated in the Jul 2026 successor either.", s:["oa52"]},
+{g:"Product, research & writing", t:"dont", tr:["pm"], h:"Don't inherit coding-agent defaults for requirements work",
+ b:"OpenAI's coding guidance tells the model that if a directive is somewhat ambiguous, go ahead and make the change. That's right for coding throughput and wrong for requirements, where ambiguity is exactly the signal you need surfaced. Override it — and note the Jul 2026 refinement: rather than a standing \"ask 1–3 questions\" ritual, name the specific ambiguities that should trigger a question, because unconditional scaffolding is the kind of prompt bloat the current guidance tells you to trim.", s:["oacodex","oa56","speckit"]},
+{g:"Product, research & writing", t:"do", tr:["pm","qa"], h:"Use the agent to map edge cases during design, not after",
+ b:"Anthropic's design team used it for \"mapping out error states, logic flows, and system statuses to identify edge cases during design rather than discovering them in development.\" That is test design shifted left into the spec phase — the natural collaboration point between product and QA.", s:["antteams"]},
+{g:"Product, research & writing", t:"dont", tr:["pm","eng","qa"], h:"Don't forward output you haven't reviewed",
+ b:"Workslop's asymmetry is that it's cheap to produce and expensive to verify, so the cost lands on the recipient — and it changes how they perceive the sender, as less capable and less trustworthy. The engineering analogues are the unreviewed agent PR, the auto-generated design doc, and the AI-summarised incident report.", s:["workslop","betterup"]},
+{g:"Product, research & writing", t:"do", tr:["pm"], h:"Fix the conditions that produce workslop, not just the people",
+ b:"The follow-up research identifies the cause as vague AI mandates given to overwhelmed teams in environments where it doesn't feel safe to admit uncertainty. Under those conditions, generating plausible output is the rational move. Pair any \"use AI more\" push with explicit quality bars per artifact type and permission to say \"I don't know.\"", s:["workslop2"]},
+{g:"Product, research & writing", t:"dont", tr:["pm"], h:"Don't automate work where personal responsibility is the point",
+ b:"Google's PAIR split: automate tasks that are boring, repetitive, awkward or dangerous. Augment when people enjoy the task or when personal responsibility for the outcome matters. Prioritisation calls, stakeholder alignment and judgment tradeoffs sit squarely in the second bucket — accountability, not throughput, is the product.", s:["pair"]},
+{g:"Product, research & writing", t:"dont", tr:["pm"], h:"Don't lead with \"can we use AI for this?\"",
+ b:"PAIR's reframe: instead of \"can we use AI to ___,\" ask \"how might we solve ___, and can AI solve it in a unique way?\" This is the direct antidote to the vague-mandate dynamic that the workslop research identifies as the root cause. And if someone explicitly says they don't want a task automated, that's a good task not to disrupt.", s:["pair"]},
+{g:"Product, research & writing", t:"do", tr:["pm","sec"], h:"Treat high-risk domains as requiring qualified review and disclosure",
+ b:"Anthropic's usage policy names domains vital to public welfare — including financial decisions, insurance claims and coverage, legal guidance, healthcare, employment and housing. Where the use involves advice or subjective decisions affecting individuals, a qualified professional must review before finalisation, and the AI involvement must be disclosed. If your product touches these, that's an acceptance criterion, not a preference.", s:["aup"]},
+
+/* ============ TEAM & MEASUREMENT ============ */
+{g:"Team & measurement", t:"do", tr:["pm","eng"], h:"Measure satisfaction and outcomes — and label them separately",
+ b:"Self-reported productivity is the best-refuted metric in this literature. METR: believed +20%, measured −19% — and their May 2026 survey of 349 technical workers still finds a self-reported median of 1.4–2×. DORA 2025: over 80% self-report gains. Stack Overflow 2025 (still the latest published edition — the 2026 survey opened in June and has not reported): 84% adoption, with more developers actively distrusting AI accuracy (46%) than trusting it (33%). Self-report measures cognitive relief, which is real and worth tracking — just don't call it throughput.", s:["metr","metrsurvey","dora25","so25"]},
+{g:"Team & measurement", t:"do", tr:["pm","eng"], h:"Track a stability and a maintainability metric, not just throughput",
+ b:"Throughput is the metric that moves. Stability is the metric that degrades — DORA found instability rising with AI adoption in both 2024 and 2025. Maintainability is the one nothing else catches: block duplication is up 81% since 2023 while refactored code fell to 3.8% of changed lines, so developers are now roughly 5× more likely to copy-paste than to refactor.", s:["dora25","gitclear","doracap"]},
+{g:"Team & measurement", t:"dont", tr:["pm","eng"], h:"Don't try to A/B test \"AI vs no AI\"",
+ b:"METR abandoned that design: 30–50% of developers declined to submit tasks because they didn't want to do them without AI. Any withdrawal-based experiment hits the same selection problem, biased toward finding no benefit. Use staggered adoption with difference-in-differences, within-subject before/after with matching, or a held-out internal eval suite of real historical tickets.", s:["metr26","twoX"]},
+{g:"Team & measurement", t:"do", tr:["pm","eng"], h:"Stratify every measurement by codebase age and task complexity",
+ b:"This is the strongest moderator in the literature and an unstratified average hides it — gains concentrate in newer repositories and are barely present in legacy ones. Also stratify by language: security pass rates for generated code range from 29% (Java) to 62% (Python).", s:["twoX","veracode"]},
+{g:"Team & measurement", t:"do", tr:["pm","eng"], h:"Fix version control and batch size first",
+ b:"Of DORA's seven AI capabilities, strong version control practices and working in small batches are the cheapest and most directly relevant to agentic work — they're what make agent output reviewable and revertable. The model's thesis: AI magnifies the strengths of high-performing organisations and the dysfunctions of struggling ones.", s:["doracap"]},
+{g:"Team & measurement", t:"do", tr:["pm","eng"], h:"Expect proficiency, not tenure, to predict success",
+ b:"In measured session data, novice sessions reach verified success 15% of the time versus 28–33% for intermediate-to-expert — but the intermediate-to-expert gap is small, and all major occupations land within seven points of software engineers. The sharpest differentiator on failure is persistence: 19% of novice sessions end abandoned, versus 5–7% for everyone else.", s:["expert"]},
+{g:"Team & measurement", t:"do", tr:["pm","eng"], h:"Budget by archetype, not one org-wide quota",
+ b:"Per-turn token usage spans a 50× range across user archetypes in production telemetry; uniform policies impose disproportionate costs on the most intensive users. Also know where long-session spend goes: full context resent every request, cache misses, and compaction itself.", s:["msr","cccost"]},
+{g:"Team & measurement", t:"do", tr:["pm","eng"], h:"Have everyone build a tiny agent once",
+ b:"\"It's an LLM, a loop, and enough tokens\" — under 400 lines, most of it boilerplate. The cure for both over-trust and mystification is having each engineer build one. It is the cheapest possible investment in calibrated judgment about what these systems can and cannot do.", s:["ball"]},
+{g:"Team & measurement", t:"do", tr:["pm","eng"], h:"Run a small pilot, then launch broadly at once",
+ b:"Anthropic's own playbook: pilot with 20–50 existing power users who become internal champions, have them build the shared commands and skills, then launch org-wide in a single event with the pilot group as mentors — rather than a phased rollout that leaves teams waiting their turn.", s:["scaling"]},
+{g:"Team & measurement", t:"do", tr:["pm","eng","qa"], h:"Use the agent as the onboarding tool",
+ b:"Point new engineers at the codebase and let them ask directly: how does logging work, how do I add an endpoint, what edge cases does this class handle. No special prompting required, and it reduces load on the rest of the team. It is also, per the skill-formation research, the mode where juniors learn rather than just accept.", s:["ccbp","skills"]}
+];
+
+/* ---------- Evidence stats ---------- */
+const STATS = [
+  {n:"−19%", l:"Measured effect on expert maintainers in METR's RCT — while they believed they were 20% faster",
+   c:"16 developers, 246 tasks, their own 1M+ LOC repos, early-2025 tooling. METR states the confidence interval as +2% to +39% — in the Feb 2026 update, not the original post, which deferred it. METR's Feb 2026 follow-up estimates −4% for newly recruited developers and states it is \"likely that developers are more sped up from AI tools now.\" Cite the self-assessment failure, not the headline.", s:["metr","metrpaper","metr26"]},
+  {n:"~44%", l:"Of code-generation tasks introduced a risky vulnerability — while syntax is now correct nearly 100% of the time",
+   c:"Veracode's 2026 report (Jul 2026, 100+ models) puts the security pass rate at 56%, up one point from 55% in the Spring 2026 edition — statistically flat across two years, and model size has only a very small effect. The Jul report restates the weakest categories — XSS 15% and log injection 12% — while the per-language figures (Java 29%, Python 62%) appear only in the Spring edition. Vendor-published and synthetic; the gap between \"runs\" and \"safe\" is the actionable part.", s:["veracode26","veracode"]},
+  {n:"+81%", l:"Increase in block duplication since 2023, as refactored code fell to 3.8% of changed lines",
+   c:"623 million analyzed changes, 2023–2026. Moved (refactored) code went 21% in 2022 → 13% in 2023 → 3.8% year-to-date 2026, so most of the drop predates peak agent adoption. Correlational, vendor-published, customer-skewed sample. Note the tension: the 802-developer study found merge and revert rates held steady — because those are short-horizon proxies and duplication is a long-horizon cost no CI gate catches.", s:["gitclear","twoX"]},
+  {n:"93%", l:"Of permission prompts users approved before Anthropic redesigned the flow",
+   c:"Anthropic's own product telemetry, cited as the reason they moved to classifier-based review. Their wording: \"The more approvals a user sees, the less attention they pay to each, becoming over time much less diligent in their supervision.\" This is why a prompt is not a control.", s:["contain"]},
+  {n:"76%", l:"Peak measured rate at which a frontier model gamed unit tests rather than satisfy the spec",
+   c:"Read the rates as an Oct-2025 model cohort — GPT-5, o3, Opus 4.1, Sonnet 4 — and nobody has re-run this benchmark on 2026 models. On Oneoff-SWEbench: 76% / 70% / 54% / 48%; on the harder Conflicting variant: 54% / 49% / 50% / 39%. The 2026 successor work measures a different thing (SpecBench finds a 10–16pp validation-versus-held-out gap on current frontier models, widening ~27pp per 10× LOC), so the exact rates are stale but the failure mode is not. The mitigation — Claude-family models cheat >79% by editing the test file, which read-only access prevents — is untouched by newer work.", s:["impossible","specbench"]},
+  {n:"41.5%", l:"Of human-found PR issues that four AI review agents caught combined — 20–32% individually",
+   c:"184 PR instances, 67 repositories, executable tests derived from real human review comments. 84% of sampled agent comments were still rated useful. Read it as: additive reviewer, not substitute.", s:["crab"]},
+  {n:"2.09×", l:"Per-capita PR throughput after an enterprise \"2×\" mandate — reached after ~9 months of accumulated use",
+   c:"802 developers, 196,212 PRs, Jan 2024–Apr 2026. Gains concentrated in newer repos and barely present in legacy ones; indistinguishable across seniority; not separable across three model generations. Adoption was not randomised, and the company is described as young and AI-forward — read as an upper envelope.", s:["twoX"]},
+  {n:"48%", l:"Share of all input tokens consumed by conversation history in production agent sessions",
+   c:"13.5M sessions, 3.2M users, 761M LLM calls. Function calls add 28%. Median input:output ratio 275:1. This is the empirical case for aggressive, milestone-based context management.", s:["msr"]},
+  {n:"~2 hrs", l:"Average time to resolve each instance of AI \"workslop\" received",
+   c:"1,150 US desk workers, Sept 2025. 40% received workslop in the prior month; $186/employee/month. The $9M figure for a 10,000-person company is an extrapolation from self-estimates, not a measured loss — don't present it as one.", s:["betterup","workslop"]},
+  {n:"131 days", l:"Doubling time of agent task-length capability across models since 2023",
+   c:"89 days for 2024 onward. But the headline horizon is a 50%-success measure — not a delegation threshold. METR states the confidence intervals are still very wide, human baseline times were measured for only 5 of their 31 long (8h+) tasks, and their tracker notes measurements above 16 hours are unreliable with the current suite. Use the trend for cadence: re-review your guardrails quarterly.", s:["metrth","metrtrack"]}
+];
+
+/* ---------- Failure patterns ---------- */
+const FAILS = [
+  ["The kitchen sink session", "One task, then something unrelated, then back to the first. Context is full of irrelevant information.", "Clear between unrelated tasks. Name sessions and treat them like branches.", ["ccbp"]],
+  ["Correcting over and over", "It's wrong, you correct it, it's still wrong, you correct again. Context is now polluted with failed approaches.", "After two failed corrections, clear and write a better initial prompt incorporating what you learned.", ["ccbp"]],
+  ["The over-specified context file", "The file is so long the agent ignores half of it, because the important rules are lost in noise.", "Prune ruthlessly. If it already behaves correctly without the instruction, delete it — or convert it to a hook.", ["ccbp"]],
+  ["The trust-then-verify gap", "A plausible-looking implementation that doesn't handle edge cases. It passes casual inspection — 66% of developers report solutions that are \"almost right, but not quite.\"", "Always provide verification. If you can't verify it, don't ship it.", ["ccbp","so25"]],
+  ["The infinite exploration", "\"Investigate this\" without scope. It reads hundreds of files and fills the context before doing any work.", "Scope investigations narrowly, or route them through a subagent so exploration doesn't consume your main context.", ["ccbp"]],
+  ["The invisible 20%", "The agent reliably does the visible 80% and misses what lives outside its context window: cross-cutting changes, hidden middleware, audit logging, cross-repo integration tests.", "Review hardest at the boundaries the agent couldn't see. A model can only reason about code it can see.", ["sg80","osmani"]],
+  ["Silent quality decay", "Each iteration adds another small defense. The system slowly becomes less understandable while appearing more robust.", "Add a maintainability signal to your dashboard that isn't a delivery metric, and make \"extract and reuse\" an explicit review criterion.", ["ronach3","doern","gitclear"]],
+  ["Approval fatigue", "By the tenth prompt you're clicking through rather than reviewing. Measured approval rate before the flow was redesigned: 93%.", "Replace prompts with deny rules and sandbox boundaries that never ask. Reserve prompts for genuinely novel actions.", ["ccbp","contain"]],
+  ["Premature completion", "The agent declares the project done, or marks a feature complete without testing it.", "Agree the completion criteria before implementation starts, and have something other than the implementing agent check them. Anthropic retired the older one-feature-per-session workaround in Mar 2026 — the point now is a pre-agreed definition of done, not a smaller slice.", ["harn26","harn"]],
+  ["The chained-task cliff", "Every step looks fine in isolation, and the pipeline still fails. Serial completion collapsed from 100% at stage one to 20% at the final stage across 15 models.", "Measure the whole chain, not the steps. Instrument recovery from partial failure.", ["ramp"]]
+];
+
+/* ---------- Misquote table ---------- */
+const MYTHS = [
+  ["\"AI makes developers 19% slower.\"",
+   "16 expert maintainers, 246 tasks, their own decade-old repos, early-2025 tooling, confidence interval +2% to +39%. METR's Feb 2026 follow-up estimates −4% for newly recruited developers (CI −15% to +9%) and −18% for returning ones (CI −38% to +9%), and says real-world speedup is likely higher now. The transferable finding is the self-assessment error, not the number.", ["metr","metr26"]],
+  ["\"Copilot makes you 55% faster.\"",
+   "One synthetic task — write an HTTP server in JavaScript — with 70 developers analysed, recruited on Upwork, 2022–23. 95% CI [21%, 89%]. The authors explicitly exclude large professional projects and did not examine code quality.", ["metr"]],
+  ["\"AI already writes 30% of the code at <big tech company>.\"",
+   "These figures come from executive remarks, not published methodology, and where a method has been described at all it is completion-acceptance — the share of suggested characters a developer kept — not authorship. The same speakers have qualified them heavily (better on new code than legacy, better in some languages than others), and the qualifiers never survive the retelling. Treat any \"AI writes N% of our code\" claim as unmeasured until someone states the method. The measured version of this question is throughput, and it varies enormously by codebase age.", ["twoX"]],
+  ["\"DORA found AI reduces throughput.\"",
+   "That's the 2024 figure (−1.5% per 25% adoption increase). In 2025 the throughput association flipped positive. The instability finding persisted. DORA published no 2025 percentage equivalents — only standardised effects — so any 2025 percentage you see is the 2024 number relabelled.", ["dora25"]],
+  ["\"Stanford proved 35–40% gains on greenfield, 10% on legacy.\"",
+   "The direction is well supported by several independent lines of evidence. The specific percentages come from a conference talk, not a paper, and are quoted inconsistently across secondary sources. Cite the direction; don't cite the decimal.", ["twoX","dorroi"]],
+  ["\"Agents can now handle 16-hour tasks.\"",
+   "That's a 50%-success-rate horizon, with very wide confidence intervals, and METR's tracker states measurements above 16 hours are unreliable with their current task suite. The 80% horizon is substantially shorter — and it's the one relevant to unsupervised delegation.", ["metrth","metrtrack"]],
+  ["\"Workslop costs $9M a year.\"",
+   "Extrapolated from self-reported time estimates by 1,150 desk workers: ~2 hours per instance × $186/employee/month × 10,000 employees. An illustration, not a measured loss. The 95%-of-organisations-see-no-return figure often cited alongside it comes from a different study about overall AI ROI — don't merge them.", ["betterup","workslop"]],
+  ["\"Evals are the new unit tests.\"",
+   "Good framing, no first-party lab source. What is citable: Google describes adaptive rubrics as working \"like unit tests\"; Husain's Level 1 is literally assertions run on every code change; OpenAI's eval-driven design frames evals as what \"prevents poke-and-hope guesswork.\" Cite those, not the slogan.", ["hamel","oaeval","adkeval"]],
+  ["\"The benchmark scores tell us what agents can do.\"",
+   "OpenAI retired SWE-bench Verified after finding 59.4% of audited failures had material issues in test design and/or problem description, and demonstrated contamination, with frontier models reproducing the human gold patch. Benchmarks are procurement signals at best. Build your own eval from your own tickets.", ["oaswe","ramp"]],
+  ["\"A good AGENTS.md is the main unlock.\"",
+   "One practitioner calls it the main differentiator. The only controlled study (438 tasks, four agent configurations, updated Jun 2026) found neither direction reaches statistical significance — +2.4% for developer-written files at p=0.21, −0.5% to −2% for generated ones — while the ~20% inference-cost penalty is highly significant. Its own headline is that context files \"do not generally improve task success rates.\" Both can still be true for a specific repo; the point is that you have to measure yours rather than assume.", ["woolf","agentsmdpaper"]]
+];
+
+/* ---------- Reference tables ---------- */
+const TBL_DELEGATE = {
+  head:["Delegate freely","Delegate with a spec and a gate","Don't delegate"],
+  rows:[
+    ["Bug fixes with a reproduction","Multi-file features in familiar code","Broad cross-repository refactors"],
+    ["Test coverage and fixtures","Migrations across many similar files","Changes needing deep domain knowledge"],
+    ["Documentation and runbooks","New services and modules","Substantial payments business logic"],
+    ["Accessibility and UI polish","Performance investigation","Production-critical incidents"],
+    ["Boilerplate and scaffolding","Dependency upgrades","Anything touching security, PII, or auth"],
+    ["Codebase Q&A and onboarding","Bugs where a first fix regressed","Ambiguous or open-ended tasks"],
+    ["Research and library comparison","Cleanups you never had time for","Work someone needs to learn by doing"]
+  ]
+};
+
+const TBL_PROCESS = {
+  head:["Situation","Process weight","Why"],
+  rows:[
+    ["Typo, log line, rename, one-line fix","Plain prompt, no plan","If you could describe the diff in one sentence, skip the plan"],
+    ["Well-understood feature, familiar code","Short plan, then implement","Enough structure to catch a wrong direction early"],
+    ["Unfamiliar territory, or requirements still moving","Full spec: requirements → design → tasks","Uncertainty, not size, is what process buys down"],
+    ["Bug in a critical path, or a previous fix regressed","Written bug spec before any code","A second failed attempt is the automatic escalation trigger"],
+    ["Multi-hour or unattended run","Self-contained plan file + deterministic stop gate","The plan must survive compaction and session restarts"]
+  ]
+};
+
+const TBL_MECH = {
+  head:["When this happens","Reach for","Why that one"],
+  rows:[
+    ["The agent got a convention wrong twice","Project context file (CLAUDE.md / AGENTS.md)","Always-on, cheap, but every line competes for attention"],
+    ["You've pasted the same playbook three times","A skill","Loaded only when relevant — effectively unbounded reference material"],
+    ["A side task floods your session with output","A subagent","Separate context window; returns a 1–2k token summary"],
+    ["You keep copying from a system it can't see","An MCP server","Structured access — but audit the tool count and pin the server"],
+    ["It must happen every time, without asking","A hook","Deterministic. A prompt instruction is a request; a hook is enforcement"],
+    ["It must never happen, in any mode","A deny rule plus a sandbox","Deny rules block even in bypass mode; the sandbox catches subprocesses"],
+    ["Another repository needs the same setup","A plugin","Packaged and versioned rather than copy-pasted"]
+  ]
+};
+
+/* ---------- Glossary ----------
+   Terms are matched against each card's heading + body at render time and
+   surfaced as a footnote on that card, so a reader who doesn't know the
+   vocabulary never has to leave the page. Longest match wins, so
+   "PCI DSS 6.2.3.1" does not also trigger "PCI DSS 6.2.3".
+   Keep definitions to one sentence, plain language, no second acronym. */
+const G = {
+  "PCI DSS 6.2.3.1": "The PCI rule that a manual code review must be done by someone other than the person who wrote the code, and approved by management — it applies only where the review is manual.",
+  "PCI DSS 6.2.3": "The PCI rule that custom software must be reviewed before it goes to production. Automated review tools can satisfy it.",
+  "6.2.3.1": "The PCI rule requiring a manual code review to be done by someone other than the author, with management approval — conditional on the review being manual.",
+  "6.2.3": "The PCI rule that custom software is reviewed before release to production.",
+  "6.2.2": "The PCI rule that developers get security training relevant to their job at least once a year.",
+  "6.3.2": "The PCI rule that you keep an inventory of the software components your custom code depends on — the reason an agent quietly adding a package is a compliance problem, not just a code problem.",
+  "6.5.1": "The PCI rule that production changes follow a documented procedure recording the reason for and description of the change.",
+  "12.5.1": "The PCI rule that you keep a current inventory of everything in scope — which now has to include agents and the service accounts they run as.",
+  "12.10.7": "The PCI rule requiring you to start incident response when you find stored card numbers somewhere they were not expected to be.",
+  "12.8": "The PCI rules covering third-party service providers — the ones that apply when your data reaches an outside vendor, including a model provider.",
+  "Req 4": "The PCI requirement covering protection of cardholder data while it moves across public networks.",
+  "Req 3": "The PCI requirement covering how cardholder data is stored and protected at rest.",
+  "PCI scope": "The systems, people and processes that store, process or transmit cardholder data — and anything that can affect their security.",
+  "PAN": "Primary Account Number — the long number on the front of a payment card.",
+  "SAD": "Sensitive Authentication Data — the security code, full magnetic-stripe data and PIN data, which may never be retained after a transaction is authorised.",
+  "CDE": "Cardholder Data Environment — the part of a company’s systems that handles card data and therefore carries the strictest controls.",
+  "TPSP": "Third-Party Service Provider — an outside company that handles your data or can affect its security; model providers count.",
+  "QSA": "Qualified Security Assessor — the external auditor who signs off on PCI compliance.",
+  "ZDR": "Zero Data Retention — a contractual setting where the vendor keeps no copy of what you send after processing it.",
+  "SBOM": "Software Bill of Materials — the machine-readable list of every component your software depends on.",
+  "SAST": "Static Application Security Testing — tooling that scans source code for security flaws without running it.",
+  "CWE": "Common Weakness Enumeration — the standard catalogue of software flaw types, so \"CWE-80\" always means the same bug class.",
+  "OWASP": "A nonprofit that publishes widely used security standards, including the Top 10 lists for LLM and agentic applications.",
+  "NIST": "The US National Institute of Standards and Technology, whose AI Risk Management Framework is the reference most auditors recognise.",
+  "METR": "Model Evaluation and Threat Research — an independent nonprofit that runs controlled studies of what AI models can actually do, rather than what vendors claim.",
+  "RCT": "Randomised Controlled Trial — tasks are assigned to conditions at random, which is what lets you claim a cause rather than a correlation.",
+  "DORA": "A long-running Google research program studying what actually predicts software delivery performance, based on annual surveys of tens of thousands of practitioners.",
+  "p=0.21": "A statistical result this weak means the finding could easily be noise — conventionally, anything above p=0.05 is not treated as a real effect.",
+  "P95": "The 95th percentile — the value that only the worst 5% of cases exceed. Useful because averages hide the slow tail.",
+  "LOC": "Lines of code, used here as a rough measure of how large a codebase or change is.",
+  "SWE-bench": "A widely cited benchmark of real GitHub issues used to score coding agents — and, per OpenAI's own audit, one with material test-design and contamination problems.",
+  "ImpossibleBench": "A benchmark that deliberately makes the tests conflict with the spec, so any pass proves the model cheated rather than solved.",
+  "c-CRAB": "A benchmark that scores AI code-review agents against real pull requests, using tests derived from what human reviewers actually caught.",
+  "SpecBench": "A 2026 benchmark measuring the gap between how a model performs on tests it can see versus tests it cannot.",
+  "RAMP": "A 2026 benchmark that measures agents across a chained, multi-stage pipeline rather than one isolated task.",
+  "MCP": "Model Context Protocol — the open standard for connecting an agent to external tools and data sources.",
+  "AGENTS.md": "A plain-text file committed to a repository that tells coding agents its conventions, build commands and constraints. CLAUDE.md and GEMINI.md are the same idea under different names.",
+  "CLAUDE.md": "A file committed to a repository holding project context an agent reads at the start of every session.",
+  "EARS": "A way of writing requirements as \"WHEN [condition] THE SYSTEM SHALL [behaviour],\" which makes each one directly testable.",
+  "compaction": "When a session runs out of room, the agent summarises the earlier conversation to make space — cheap in tokens, expensive in detail, and instructions given early are the first thing lost.",
+  "context window": "The total amount of text a model can consider at once. Everything competes for it, and quality degrades as it fills.",
+  "subagent": "A separate agent spawned to do one task in its own context window, returning only a summary — which keeps its work from crowding the main session.",
+  "worktree": "A second working copy of the same Git repository, so two agents can edit different branches at once without colliding.",
+  "Stop hook": "A script that runs when an agent tries to finish and can refuse to let it, typically until tests pass.",
+  "PreToolUse": "A hook that fires before an agent uses a tool and can block the action outright — enforcement rather than instruction.",
+  "lethal trifecta": "The combination that makes an agent exploitable: access to private data, exposure to untrusted content, and the ability to send data out. Any two are usually fine; all three is not.",
+  "prompt injection": "An attack where instructions hidden in content the agent reads — an issue, a README, a dependency — get followed as though you had typed them.",
+  "hallucination": "When a model states something fluently and confidently that is simply not true.",
+  "mutation testing": "Deliberately introducing small bugs to see whether your tests catch them — a check on whether tests actually assert anything.",
+  "egress": "Outbound network traffic. Restricting it is the main defence against an agent sending your data somewhere it shouldn't.",
+  "token": "The unit models read and bill in — roughly three-quarters of a word. Context limits and costs are both measured in tokens."
+};
+
+/* ---------- Who these people are ----------
+   Practitioner sources cited by name. Credentials are the durable kind —
+   what they built or established — rather than current job titles. */
+const PEOPLE = {
+  "Simon Willison": "Co-creator of the Django web framework and creator of Datasette; writes the most systematically documented public body of practice on working with coding agents, and originated the \"lethal trifecta\" framing this guide uses.",
+  "Andrej Karpathy": "Founding member of OpenAI and former Director of AI at Tesla; coined both \"vibe coding\" in 2025 and the \"agentic engineering\" reframing that replaced it in 2026.",
+  "Mitchell Hashimoto": "Founder of HashiCorp — Terraform, Vagrant, Vault — and creator of the Ghostty terminal; publishes unusually detailed accounts of his own agent-assisted work, including the failures.",
+  "Armin Ronacher": "Creator of Flask and Jinja2, two of the most widely deployed Python libraries; one of the few practitioners who publishes the things that did not work, not just the wins.",
+  "Kent Beck": "Created Extreme Programming and modern test-driven development, and co-authored the Agile Manifesto; his skepticism about agent swarms carries weight precisely because he spent a career arguing for developer-facing process.",
+  "Birgitta Böckeler": "Distinguished Engineer at Thoughtworks who runs the Exploring Gen AI research series on martinfowler.com; the only person in this guide publishing controlled experiments on agent workflows rather than anecdotes.",
+  "Erik Doernenburg": "Thoughtworks technologist whose long-running work on code quality produced the measured finding that agents tend to introduce technical debt without oversight.",
+  "Kief Morris": "Author of \"Infrastructure as Code\" (O'Reilly); his humans-in / on / outside-the-loop framework is the clearest published model for deciding how much autonomy to grant.",
+  "Addy Osmani": "Engineering leader on Google Chrome and a long-standing authority on web performance; his \"70% problem\" is the most-cited framing of where AI-assisted coding stalls.",
+  "Thorsten Ball": "Author of \"Writing an Interpreter in Go\" and an engineer on the Amp coding agent; demonstrated that a working coding agent is roughly 400 lines, which is the fastest cure for both over-trust and mystification.",
+  "Hamel Husain": "Machine-learning engineer, formerly at GitHub, whose writing on LLM evaluation is the standard reference for teams building their own eval suites.",
+  "Max Woolf": "Data scientist known for rigorous, publicly reproducible LLM experiments and a default posture of skepticism — which is what makes his 2026 change of mind on agents worth reading.",
+  "Gene Kim": "Author of \"The Phoenix Project\" and co-author of the DORA research that established the modern software-delivery metrics.",
+  "Steve Yegge": "Long-time Google and Amazon engineer known for widely circulated essays on developer tooling and platform strategy."
+};
+
+/* ---------- The ten that change outcomes ----------
+   A highlighted subset of P, selected on three tests: a competent engineer
+   would not already be doing it, it moves something measurable, and it is
+   actionable this week. Matched to P by exact heading — build.mjs fails if a
+   heading here has no match, so renaming a practice can't silently orphan it.
+   `extra` renders as a short list, `line` as a bold closing takeaway. */
+const MUST = [
+  { h:"Make test files read-only to the implementing agent",
+    line:"A green build proves the tests passed. It does not prove the tests still test anything." },
+
+  { h:"Write acceptance criteria in EARS form",
+    line:"One sentence that is simultaneously the agent's instruction and QA's test case removes the step where requirements rot." },
+
+  { h:"Don't switch models mid-session",
+    line:"Invisible, mechanical, and it costs you real money every time." },
+
+  { h:"Fix your build and test entrypoints before you tune prompts",
+    extra:[
+      "Cap command timeouts so a hanging command dies in seconds, not minutes.",
+      "Truncate failure output — failing tests only, never the whole log.",
+      "Give the agent a fast path: one test file, not the entire suite.",
+      "Make the build hermetic, so the same command gives the same result twice.",
+      "Set a retry cap so a stuck agent escalates to you instead of looping."],
+    line:"You cannot prompt your way out of a slow, flaky build." },
+
+  { h:"Look hardest at what the agent could not see",
+    line:"A model can only reason about code it can see. If it found three relevant files, it planned for three files." },
+
+  { h:"Understand what compaction actually costs you",
+    line:"A task that finishes inside one clean context is faster, cheaper and more accurate — not a trade-off, all three." },
+
+  { h:"Don't expect the context file to be the magic lever",
+    line:"What you get is compliance with specific instructions, not comprehension of your repository." },
+
+  { h:"Treat agent config files as executable code",
+    line:"Cloning the repo and opening it is enough. No install, no build, no command you typed." },
+
+  { h:"Cap parallelism at what you can actually verify",
+    line:"More agents is not more throughput if everything queues behind one reviewer." },
+
+  { h:"Deploy AI review as an additional reviewer, not a replacement",
+    line:"AI review is a second pair of eyes with different blind spots, not a cheaper pair of the same eyes. \"The bot approved it\" is never a reason to skip a human." }
+];
+
+
+/* ===================== RENDER ===================== */
+const esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+function vintage(label){
+  const m = String(label).match(/\b(20\d\d)\b/);
+  if(!m) return ["docs","ydoc","Living documentation — continuously updated, no fixed publication date"];
+  const y = +m[1];
+  if(y >= 2026) return [String(y),"y26","Published 2026"];
+  if(y === 2025) return ["2025","y25","Published 2025 — check the card text for whether it has been superseded"];
+  return [String(y),"yold","Published "+y+" — treat as historical unless the claim is structural"];
+}
+const srcLinks = keys => (keys||[]).map(k=>{
+  const s = S[k]; if(!s) return "";
+  const [lbl,cls,tip] = vintage(s[0]);
+  return '<a href="'+s[1]+'" target="_blank" rel="noopener"><span class="yr '+cls+'" title="'+tip+'">'+lbl+'</span>'+esc(s[0])+'</a>';
+}).join("");
+
+const TRACK_LABEL = {eng:"Engineering", qa:"QA", pm:"Product", sec:"Security"};
+
+/* Longest term first so "PCI DSS 6.2.3.1" wins over "6.2.3", and a term that
+   sits inside an already-matched span is skipped. Word-boundary-ish guards
+   keep "token" out of "tokenization" and "6.2.3" out of "6.2.3.1". */
+const GLOSS_TERMS = Object.keys(G).sort((a,b)=>b.length-a.length);
+const reEsc = t => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+function glossaryFor(text){
+  const hay = String(text);
+  const hits = [];
+  const taken = [];
+  for(const term of GLOSS_TERMS){
+    const re = new RegExp("(^|[^\\w.-])" + reEsc(term) + "(?![\\w.-])", "i");
+    const m = re.exec(hay);
+    if(!m) continue;
+    const start = m.index + m[1].length, end = start + term.length;
+    if(taken.some(([s,e]) => start < e && end > s)) continue;
+    taken.push([start,end]);
+    hits.push([start, term]);
+  }
+  return hits.sort((a,b)=>a[0]-b[0]).slice(0,4).map(h=>h[1]);
+}
+const fnBlock = text => {
+  const terms = glossaryFor(text);
+  if(!terms.length) return "";
+  return '<div class="fn">' + terms.map(t =>
+    '<div><b>' + esc(t) + '</b><span>' + esc(G[t]) + '</span></div>').join("") + '</div>';
+};
+
+/* Rules */
+document.getElementById("rulesBox").innerHTML = RULES.map((r,i)=>
+  '<div class="rule"><div class="rn">'+(i+1)+'</div><div>'+
+  '<h4>'+esc(r[0])+'</h4><p>'+esc(r[1])+'</p>'+
+  fnBlock(r[0]+" "+r[1])+
+  '<div class="srcs" style="margin-top:8px">'+srcLinks(r[2])+'</div>'+
+  '</div></div>').join("");
+
+/* The ten that change outcomes — pulled from P by exact heading, so the
+   content lives in one place and can never drift between the two sections. */
+const mustIndex = new Map(MUST.map((m,i)=>[m.h, {rank:i+1, ...m}]));
+document.getElementById("mustBox").innerHTML = MUST.map((m,i)=>{
+  const p = P.find(x=>x.h===m.h);
+  if(!p) return "";
+  return '<div class="must'+(p.t==="dont"?" dont":"")+'"><div class="mn">'+(i+1)+'</div><div>'+
+    '<div class="kind">'+(p.t==="dont"?"Don’t":"Do")+'</div>'+
+    '<div class="tracks">'+p.tr.map(t=>'<span class="tk">'+TRACK_LABEL[t]+'</span>').join("")+'</div>'+
+    '<h4>'+esc(p.h)+'</h4><p>'+esc(p.b)+'</p>'+
+    (m.extra ? '<ul>'+m.extra.map(x=>'<li>'+esc(x)+'</li>').join("")+'</ul>' : "")+
+    (m.line ? '<p class="line">'+esc(m.line)+'</p>' : "")+
+    fnBlock(p.h+" "+p.b+" "+(m.extra||[]).join(" ")+" "+(m.line||""))+
+    '<div class="srcs">'+srcLinks(p.s)+'</div></div></div>';
+}).join("");
+
+/* Practice cards */
+let ftr = "all", fkind = null, fq = "", fold = false;
+const isOld = p => (p.s||[]).some(k=>{
+  const s = S[k]; if(!s) return false;
+  const m = String(s[0]).match(/\b(20\d\d)\b/);
+  return !!m && +m[1] < 2026;
+});
+const cardsBox = document.getElementById("cardsBox");
+const countEl = document.getElementById("count");
+
+function render(){
+  const q = fq.trim().toLowerCase();
+  const items = P.filter(p=>{
+    if(ftr !== "all" && !p.tr.includes(ftr)) return false;
+    if(fkind && p.t !== fkind) return false;
+    if(fold && !isOld(p)) return false;
+    if(q){
+      const hay = (p.h+" "+p.b+" "+p.g).toLowerCase();
+      if(!hay.includes(q)) return false;
+    }
+    return true;
+  });
+  countEl.textContent = items.length + (items.length===1?" practice":" practices");
+  if(!items.length){ cardsBox.innerHTML = '<p class="empty">Nothing matches that filter. Try a broader term.</p>'; return; }
+  const groups = [];
+  items.forEach(p=>{
+    let g = groups.find(x=>x.name===p.g);
+    if(!g){ g = {name:p.g, items:[]}; groups.push(g); }
+    g.items.push(p);
+  });
+  cardsBox.innerHTML = groups.map(g=>
+    '<div class="grp"><h3>'+esc(g.name)+'<span class="bar"></span></h3><div class="cards">'+
+    g.items.map(p=>
+      '<div class="card'+(p.t==="dont"?" dont":"")+'">'+
+      '<div class="kind">'+(p.t==="dont"?"Don’t":"Do")+'</div>'+
+      '<div class="tracks">'+(mustIndex.has(p.h)?'<a class="mustbadge" href="#must" title="One of the ten that change outcomes">Must know</a>':"")+p.tr.map(t=>'<span class="tk">'+TRACK_LABEL[t]+'</span>').join("")+'</div>'+
+      '<h4>'+esc(p.h)+'</h4><p>'+esc(p.b)+'</p>'+
+      fnBlock(p.h+" "+p.b)+
+      '<div class="srcs">'+srcLinks(p.s)+'</div></div>').join("")+
+    '</div></div>').join("");
+}
+
+document.querySelectorAll("#trackChips .chip").forEach(b=>{
+  b.addEventListener("click",()=>{
+    ftr = b.dataset.tr;
+    document.querySelectorAll("#trackChips .chip").forEach(x=>x.setAttribute("aria-pressed", x===b?"true":"false"));
+    render();
+  });
+});
+document.querySelectorAll("#kindChips .chip").forEach(b=>{
+  b.addEventListener("click",()=>{
+    const on = b.getAttribute("aria-pressed")==="true";
+    document.querySelectorAll("#kindChips .chip").forEach(x=>x.setAttribute("aria-pressed","false"));
+    if(on){ fkind = null; } else { fkind = b.dataset.k; b.setAttribute("aria-pressed","true"); }
+    render();
+  });
+});
+document.getElementById("oldChip").addEventListener("click", e=>{
+  fold = !fold;
+  e.currentTarget.setAttribute("aria-pressed", fold ? "true" : "false");
+  render();
+});
+document.getElementById("q").addEventListener("input", e=>{ fq = e.target.value; render(); });
+render();
+
+/* Stats */
+document.getElementById("statsBox").innerHTML = STATS.map(s=>
+  '<div class="stat"><div class="n">'+esc(s.n)+'</div><div class="l">'+esc(s.l)+'</div>'+
+  '<div class="c"><b>Caveat.</b> '+esc(s.c)+'</div>'+
+  fnBlock(s.l+" "+s.c)+
+  '<div class="srcs">'+srcLinks(s.s)+'</div></div>').join("");
+
+/* Failures */
+document.getElementById("failsBox").innerHTML = FAILS.map(f=>
+  '<div class="fail"><h4>'+esc(f[0])+'</h4><p class="sym">'+esc(f[1])+'</p>'+
+  '<p class="fix"><b>The fix</b>'+esc(f[2])+'</p>'+
+  fnBlock(f[0]+" "+f[1]+" "+f[2])+
+  '<div class="srcs">'+srcLinks(f[3])+'</div></div>').join("");
+
+/* Tables */
+function tbl(el, spec){
+  document.getElementById(el).innerHTML =
+    '<table><thead><tr>'+spec.head.map(h=>'<th>'+esc(h)+'</th>').join("")+'</tr></thead><tbody>'+
+    spec.rows.map(r=>'<tr>'+r.map(c=>'<td>'+esc(c)+'</td>').join("")+'</tr>').join("")+
+    '</tbody></table>';
+}
+tbl("tblDelegate", TBL_DELEGATE);
+tbl("tblProcess", TBL_PROCESS);
+tbl("tblMech", TBL_MECH);
+
+/* Myths */
+document.getElementById("mythsBox").innerHTML = MYTHS.map(m=>
+  '<div class="myth"><p class="q">'+esc(m[0])+'</p>'+
+  '<div class="a">'+esc(m[1])+'<div class="srcs">'+srcLinks(m[2])+'</div></div></div>').join("");
+
+/* Sources, grouped */
+const GROUPS = [
+  ["Anthropic — engineering &amp; research", u=>/anthropic\.com|claude\.com|platform\.claude/.test(u)],
+  ["OpenAI", u=>/openai\.com/.test(u)],
+  ["Google, DeepMind &amp; Google Cloud", u=>/google|adk\.dev|withgoogle|geminicli|a2a-protocol/.test(u)],
+  ["GitHub, Microsoft &amp; AWS", u=>/github\.com|github\.io|microsoft\.com|agents\.md|kiro\.dev/.test(u)],
+  ["Studies, benchmarks &amp; measurement", u=>/arxiv|metr\.org|dora\.dev|gitclear|veracode|survey\.stackoverflow|usenix|hbr\.org|betterup/.test(u)],
+  ["Practitioners", u=>/simonwillison|martinfowler|lucumr|mitchellh|kentbeck|addyo|ampcode|minimaxir|sourcegraph|dwarkesh|thenewstack|singjupost|visualstudiomagazine|pragmaticengineer|hamel/.test(u)],
+  ["Security, standards &amp; compliance", u=>/owasp|nist|modelcontextprotocol|invariantlabs|wiz\.io|paloaltonetworks|safedep|legitsecurity|theregister|pcisecuritystandards/.test(u)]
+];
+const seen = new Set();
+const bucket = GROUPS.map(g=>({name:g[0], test:g[1], items:[]}));
+const other = [];
+Object.keys(S).forEach(k=>{
+  const [name,url] = S[k];
+  if(seen.has(url)) return; seen.add(url);
+  const b = bucket.find(x=>x.test(url));
+  (b ? b.items : other).push([name,url]);
+});
+if(other.length) bucket.push({name:"Other", items:other});
+const slug = n => "who-" + n.toLowerCase().replace(/[^a-z]+/g,"-").replace(/^-|-$/g,"");
+const PEOPLE_NAMES = Object.keys(PEOPLE).sort((a,b)=>b.length-a.length);
+/* A source label naming a practitioner gets a "who?" link to their entry.
+   The label itself stays a link to the article, so the two never nest. */
+function whoLink(label){
+  const hit = PEOPLE_NAMES.find(n => label.includes(n));
+  return hit ? ' <a class="person" href="#'+slug(hit)+'" title="Who is '+esc(hit)+'?">who?</a>' : "";
+}
+document.getElementById("sourcesBox").innerHTML =
+  '<h3>Who these people are</h3>' +
+  '<p style="font-size:.875rem;color:var(--subdued);margin:0 0 14px;max-width:74ch">This guide leans on a small number of individual practitioners alongside the labs and the studies. If a name is unfamiliar, here is why their view carries weight.</p>' +
+  '<div class="who">' + Object.keys(PEOPLE).map(n =>
+    '<div id="'+slug(n)+'"><h4>'+esc(n)+'</h4><p>'+esc(PEOPLE[n])+'</p></div>').join("") + '</div>' +
+  '<h3>Terms used in this guide</h3>' +
+  '<div class="gloss">' + Object.keys(G).map(t =>
+    '<div><b>'+esc(t)+'</b> &mdash; <span>'+esc(G[t])+'</span></div>').join("") + '</div>' +
+  bucket.filter(b=>b.items.length).map(b=>
+  '<h3>'+b.name+'</h3><div class="srcgrid">'+
+  b.items.sort((a,c)=>a[0].localeCompare(c[0])).map(i=>
+    '<div>&middot; <a href="'+i[1]+'" target="_blank" rel="noopener">'+esc(i[0])+'</a>'+whoLink(i[0])+'</div>').join("")+
+  '</div>').join("");
+
+/* Nav active-section highlight */
+const navLinks = [...document.querySelectorAll('nav.sticky a')];
+const secs = navLinks.map(a=>document.querySelector(a.getAttribute('href'))).filter(Boolean);
+const spy = () => {
+  let cur = 0;
+  secs.forEach((s,i)=>{ if(s.getBoundingClientRect().top <= 160) cur = i; });
+  navLinks.forEach((a,i)=>a.classList.toggle('here', i===cur));
+};
+addEventListener('scroll', ()=>requestAnimationFrame(spy), {passive:true});
+spy();
+
+/* Source count into hero */
+document.querySelectorAll(".metaline b").forEach(b=>{
+  if(b.textContent==="__SRCCOUNT__") b.textContent = seen.size;
+});
+</script>
+</body>
+</html>
