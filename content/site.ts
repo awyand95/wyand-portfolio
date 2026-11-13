@@ -1,10 +1,10 @@
 export const site = {
-  name: "Austin Wyand",
+  name: "Alec Wyand",
   role: "Software Engineer",
-  tagline: "I build tools that solve problems I actually have.",
+  tagline: "I build things I find genuinely interesting.",
   intro:
     "Platform and product engineer working across APIs, integrations, and cloud infrastructure. " +
-    "Outside of work I ship small, opinionated products — usually because I got tired of doing something manually.",
+    "Outside of work I build whatever has my attention: AI-powered tools, games, and the occasional side project for friends.",
   email: "awyand95@gmail.com",
   github: "https://github.com/awyand95",
   location: "United States",
