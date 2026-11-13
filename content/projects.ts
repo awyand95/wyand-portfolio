@@ -220,6 +220,37 @@ export const projects: Project[] = [
     ],
     accent: "from-fuchsia-500 to-cyan-500",
   },
+  {
+    slug: "bathroom-ballistics",
+    name: "Bathroom Ballistics",
+    subtitle: "A physics shooter for Roblox",
+    summary:
+      "A goofy Roblox target-shooting game: launch poop-shaped projectiles into toilet bowl targets, chase streaks and round goals, and tune your launcher between rounds.",
+    overview: [
+      "Bathroom Ballistics is a physics-based target game on Roblox. You aim in first person, read the arc preview, and fire into toilet bowl targets. Clean bowl shots score full value, rim clips score partial value, and grazes score almost nothing, so aim matters more than volume.",
+      "Each round rotates the map, target layout, obstacles, and objective. Between rounds you spend score on session-only upgrade pads or swap launcher loadouts (balanced, fast reload, high arc), and a coaching note gives one concrete thing to try next.",
+      "It was my first Roblox and Luau project, built with an AI coding assistant working from a written rulebook, design doc, and engagement research brief. Every feature was scoped small enough to test in Roblox Studio right away.",
+    ],
+    status: "Prototype",
+    year: "2026",
+    stack: ["Roblox", "Luau", "Rojo", "Cursor"],
+    highlights: [
+      {
+        title: "Server-authoritative gameplay",
+        body: "The client handles input and presentation only. The server owns firing cooldowns, projectile spawning, hit grading, and scoring, so a modified client can't award itself points.",
+      },
+      {
+        title: "Graded hit detection",
+        body: "Hits are scored by where they land on the target (bowl, rim, or porcelain), and skill bonuses only apply to clean bowl shots.",
+      },
+      {
+        title: "Built for tuning",
+        body: "All tuning values live in one shared config, and Studio playtests print compact per-round telemetry, so balance changes are driven by numbers instead of guesses.",
+      },
+    ],
+    repo: "https://github.com/awyand95/TestRobloxProject",
+    accent: "from-yellow-400 to-lime-600",
+  },
 ];
 
 export function getProject(slug: string): Project | undefined {
